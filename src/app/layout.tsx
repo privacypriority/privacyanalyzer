@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 
 // Force rebuild: CSS cache invalidation
 
@@ -131,7 +132,7 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
@@ -144,9 +145,11 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} ${poppins.variable} font-sans antialiased min-h-screen bg-white`}>
         <GoogleAnalytics measurementId="G-Y6PVP4X0SN" />
-        <Header />
-        <main>{children}</main>
-        <Footer />
+        <SmoothScrollProvider>
+          <Header />
+          <main>{children}</main>
+          <Footer />
+        </SmoothScrollProvider>
       </body>
     </html>
   );
