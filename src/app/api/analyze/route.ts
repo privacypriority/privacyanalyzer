@@ -9,7 +9,9 @@ import {
   saveAnalysis,
   generateContentHash,
   extractDomain,
-  type AnalysisData
+  initializeDatabase,
+  type AnalysisData,
+  type D1Database
 } from '@/lib/d1-database';
 
 // Vercel runtime configuration
@@ -17,8 +19,29 @@ import {
 export const maxDuration = 60; // 60 seconds (Vercel Pro plan)
 export const dynamic = 'force-dynamic';
 
+// Helper function to get D1 database from Cloudflare Workers environment
+function getD1Database(): D1Database | undefined {
+  // Method 1: Check global DB binding (most common)
+  if (typeof globalThis !== 'undefined' && (globalThis as any).DB) {
+    return (globalThis as any).DB as D1Database;
+  }
+  
+  // Method 2: Check process.env for database binding
+  if (typeof process !== 'undefined' && process.env && (process.env as any).DB) {
+    return (process.env as any).DB as D1Database;
+  }
+  
+  // Method 3: Check if running in Cloudflare Workers with different binding name
+  const cloudflareEnv = (globalThis as any).env || (globalThis as any).__env;
+  if (cloudflareEnv && cloudflareEnv.DB) {
+    return cloudflareEnv.DB as D1Database;
+  }
+  
+  return undefined;
+}
+
 // Initialize OpenAI client with best available API key
-async function getOpenAIClient(env?: Record<string, string | undefined>) {
+async function getOpenAIClient(env?: Record<string, string | undefined> | { DB?: D1Database }) {
   const keyInfo = await getBestAvailableKey(env);
 
   if (!keyInfo) {
@@ -409,7 +432,7 @@ export async function POST(request: NextRequest) {
 
     const sanitizedUrl = urlValidation.sanitized!;
 
-    // Get environment variables (Vercel uses process.env)
+    // Get environment variables (Vercel uses process.env, Cloudflare Workers uses env binding)
     const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY;
 
     // Diagnostic logging for environment variable availability (without exposing actual keys)
@@ -421,8 +444,26 @@ export async function POST(request: NextRequest) {
 
     // No need to check OPENROUTER_API here - the key manager will handle it
 
-    // Note: Database caching not available on Vercel (D1 is Cloudflare-specific)
-    const db = undefined; // No database on Vercel
+    // Initialize D1 database for Cloudflare Workers
+    let db: D1Database | undefined = undefined;
+    
+    // Try to access D1 database from Cloudflare Workers environment
+    db = getD1Database();
+    
+    if (db) {
+      console.log('[D1] Database binding found, initializing schema...');
+      try {
+        await initializeDatabase(db);
+        console.log('[D1] ✓ Database initialized successfully');
+      } catch (dbError) {
+        console.error('[D1] ✗ Database initialization failed:', dbError);
+        // Continue without database functionality
+        db = undefined;
+      }
+    } else {
+      console.log('[D1] Database binding not found - running without caching');
+      console.log('[D1] Note: If running on Cloudflare Workers, ensure DB binding is configured in wrangler.toml');
+    }
 
     console.log('Scraping URL:', sanitizedUrl);
 
