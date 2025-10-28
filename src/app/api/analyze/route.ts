@@ -43,7 +43,10 @@ function getD1Database(): D1Database | undefined {
 
 // Initialize OpenAI client with best available API key
 async function getOpenAIClient(env?: Record<string, string | undefined> | { DB?: D1Database }) {
-  const keyInfo = await getBestAvailableKey(env);
+  // Extract only string environment variables for the key manager
+  const envVars: Record<string, string | undefined> | undefined = 
+    env && typeof env === 'object' && !('DB' in env) ? env as Record<string, string | undefined> : undefined;
+  const keyInfo = await getBestAvailableKey(envVars);
 
   if (!keyInfo) {
     throw new Error('No OpenRouter API keys available');
@@ -183,7 +186,7 @@ async function scrapeWithCrawlee(url: string, captureScreenshot: boolean = false
             await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
             // Additional wait for dynamic content
             await page.waitForTimeout(2000);
-          } catch (waitError) {
+          } catch {
             log.warning('Timeout waiting for page load state, proceeding anyway');
           }
         },
@@ -713,7 +716,7 @@ export async function POST(request: NextRequest) {
             mobile: false, // Desktop screenshot
           });
           console.log('[Screenshot] Full page screenshot request completed');
-        } catch (fullPageError) {
+        } catch {
           // Fallback to regular screenshot if fullPage fails
           console.log('[Screenshot] Full page failed, trying regular screenshot...');
           screenshotResult = await (firecrawl as unknown as {
