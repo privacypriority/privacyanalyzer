@@ -7,6 +7,7 @@ keep_vars = true
 
 # Compatibility settings
 compatibility_date = "2025-10-29"
+
 compatibility_flags = ["nodejs_compat"]
 
 # Build output directory for Next.js (using @cloudflare/next-on-pages)
