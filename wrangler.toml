@@ -3,7 +3,6 @@
 
 # Project name (will be used in your *.pages.dev subdomain)
 name = "privacyhub"
-keep_vars = true
 
 # Compatibility settings
 compatibility_date = "2025-10-29"
