@@ -1,80 +1,32 @@
-# Cloudflare Pages Configuration for PrivacyHub
-# Documentation: https://developers.cloudflare.com/pages/functions/wrangler-configuration/
-
-# Project name (will be used in your *.pages.dev subdomain)
+#:schema node_modules/wrangler/config-schema.json
 name = "privacyhub"
-
-# Compatibility settings
-compatibility_date = "2025-10-29"
+main = ".open-next/worker.js"
+compatibility_date = "2024-11-02"
 compatibility_flags = ["nodejs_compat"]
+keep_vars = true
 
-# Build output directory for Next.js (using @cloudflare/next-on-pages)
-# This directory is created by the @cloudflare/next-on-pages build adapter
-pages_build_output_dir = ".vercel/output/static"
+# Asset handling for CSS, JS, and other static files
+[[rules]]
+type = "ESModule"
+globs = ["**/*.js", "**/*.mjs"]
 
-# D1 Database bindings
-# IMPORTANT: You need to create a D1 database first using:
-#   npx wrangler d1 create privacyhub-db
-# Then replace 'YOUR_DATABASE_ID_HERE' with the actual database ID from the command output
+# Static assets configuration
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# D1 Database binding
 [[d1_databases]]
-binding = "DB"  # This matches the binding name used in your code (getD1Database function)
+binding = "DB"
 database_name = "privacyhub"
-database_id = "b64e7663-7a31-4e38-a210-4c570dabd118"  # Replace with your actual D1 database ID
+database_id = "b64e7663-7a31-4e38-a210-4c570dabd118"
 
-# Environment variables for API keys
-# NOTE: For sensitive values like API keys, use the Cloudflare dashboard or wrangler secrets instead
-# Dashboard: Workers & Pages > Your Project > Settings > Environment Variables
-# Or use: npx wrangler pages secret put OPENROUTER_API
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true
+
 [vars]
-# These are example non-sensitive variables. For actual API keys, use secrets via dashboard
-# OPENROUTER_API = ""  # Set via dashboard as a secret
-# OPENROUTER_API_1 = ""  # Set via dashboard as a secret
-# OPENROUTER_API_2 = ""  # Set via dashboard as a secret
-# FIRECRAWL_API_KEY = ""  # Set via dashboard as a secret
 
-# Optional: Configure separate environments (production and preview)
-# [env.production]
-# This inherits the main configuration
-# You can override specific settings for production if needed
+[env.production]
 
-# [env.preview]
-# You can have different database IDs for preview deployments
-# [[env.preview.d1_databases]]
-# binding = "DB"
-# database_name = "privacyhub-db-preview"
-# database_id = "YOUR_PREVIEW_DATABASE_ID_HERE"
-
-# Build configuration
-# These settings are used during deployment
-# For local development, you'll need to install @cloudflare/next-on-pages:
-#   npm install --save-dev @cloudflare/next-on-pages
-#
-# Update your package.json scripts:
-#   "build": "next build --turbopack",
-#   "pages:build": "npx @cloudflare/next-on-pages",
-#   "pages:dev": "npx @cloudflare/next-on-pages --watch",
-#   "preview": "npm run pages:build && wrangler pages dev"
-#
-# Deploy to Cloudflare Pages:
-#   npx wrangler pages deploy
-
-# IMPORTANT NOTES:
-# 1. Playwright may not work reliably on Cloudflare Pages. Your app should primarily
-#    rely on Firecrawl API and the fetch fallback. The Crawlee Playwright scraper
-#    might fail in production on Cloudflare.
-#
-# 2. Create your D1 database and run the schema initialization:
-#    npx wrangler d1 create privacyhub-db
-#    npx wrangler d1 execute privacyhub-db --local --command "CREATE TABLE IF NOT EXISTS analyses (...)"
-#    Or let your initializeDatabase function handle it on first API call
-#
-# 3. Set environment variables/secrets via Cloudflare dashboard:
-#    - OPENROUTER_API (required)
-#    - OPENROUTER_API_1 (optional fallback)
-#    - OPENROUTER_API_2 (optional fallback)
-#    - FIRECRAWL_API_KEY (optional but recommended)
-#
-# 4. For local development with D1 database:
-#    npx wrangler pages dev .vercel/output/static --d1 DB=privacyhub-db --compatibility-flag=nodejs_compat
-#
-# 5. The nodejs_compat flag is required for Next.js to work on Cloudflare Pages
+[env.preview]
