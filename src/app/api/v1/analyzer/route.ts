@@ -4,9 +4,10 @@ import FirecrawlApp from '@mendable/firecrawl-js';
 import { validateUrl } from '@/lib/input-validation';
 import { hasNodeJSRuntime } from '@/lib/platform-detector';
 
-// Runtime configuration for Cloudflare Workers
-export const runtime = 'edge';
+// Runtime configuration for Cloudflare Workers via OpenNext
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 // Initialize OpenAI client
 function getOpenAIClient() {

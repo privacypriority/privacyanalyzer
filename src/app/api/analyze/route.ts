@@ -15,12 +15,12 @@ import {
 } from '@/lib/d1-database';
 import { detectPlatform, hasNodeJSRuntime, getPlatformDescription } from '@/lib/platform-detector';
 
-// Runtime configuration for Cloudflare Workers
-// Edge Runtime is required for Cloudflare Workers compatibility
-// Note: Playwright is not available in Edge Runtime - use Firecrawl or fetch fallback
-export const runtime = 'edge';
+// Runtime configuration for Cloudflare Workers via OpenNext
+// Use Node.js runtime - OpenNext adapter handles Cloudflare Workers conversion
+// With nodejs_compat flag in wrangler.toml, this provides Node.js API compatibility
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-// maxDuration is ignored on Cloudflare Workers (Workers have their own timeout config)
+export const maxDuration = 60; // Timeout configuration
 
 // Helper function to get D1 database from Cloudflare Workers environment
 function getD1Database(): D1Database | undefined {
