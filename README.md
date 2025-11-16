@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**India's first AI-powered privacy policy analyzer helping users understand how websites handle their personal data with comprehensive DPDP Act 2023 compliance analysis.**
+**India's first AI-powered privacy policy analyzer helping users understand how websites handle their personal data with comprehensive DPDP Act 2023 and DPDP Rules 2025 compliance analysis.**
 
 [🌐 Live Demo](https://privacyhub.in) · [📖 Methodology](https://privacyhub.in/methodology) · [🐛 Report Bug](https://github.com/privacypriority/privacyhub/issues) · [✨ Request Feature](https://github.com/privacypriority/privacyhub/issues)
 
@@ -38,11 +38,14 @@ PrivacyHub is a production-ready, AI-powered privacy policy analyzer that empowe
 
 ### Why PrivacyHub?
 
-- 🇮🇳 **India-Focused**: First privacy analyzer built specifically for India's DPDP Act 2023
-- 🔍 **Evidence-Based Analysis**: Scientific methodology based on DPDP Act 2023 and international best practices
+- 🇮🇳 **India-Focused**: First privacy analyzer built specifically for India's DPDP Act 2023 and Rules 2025
+- 📊 **Dual Scoring System**:
+  - **Overall Privacy Score** - User-centric evaluation of data protection practices
+  - **DPDP Compliance Score** - Regulatory compliance assessment for business owners
+- 🔍 **Evidence-Based Analysis**: Scientific methodology based on DPDP Act 2023, Rules 2025, and international best practices
 - 🤖 **AI-Powered**: DeepSeek Chat model via OpenRouter for sophisticated policy analysis
-- 📊 **Comprehensive Scoring**: 6-category weighted assessment with 90+ privacy criteria
-- 🎯 **DPDP Act Compliance**: In-depth analysis of Digital Personal Data Protection Act 2023 requirements
+- 📈 **Comprehensive Assessment**: 6-category weighted evaluation with 120+ privacy and compliance criteria
+- 🎯 **Complete DPDP Coverage**: Analysis against all 23 Rules and 7 Schedules of DPDP Rules 2025
 - 🎨 **Modern UX**: Intuitive dashboard with visual analytics and category breakdowns
 - 🚀 **Production-Ready**: Enterprise-grade error handling, fallback systems, and security measures
 
@@ -52,23 +55,38 @@ PrivacyHub is a production-ready, AI-powered privacy policy analyzer that empowe
 
 ### Core Analysis Features
 
-- **🔐 Advanced Privacy Analysis**
+- **🔐 Advanced Privacy Analysis with Dual Scoring**
   - AI-powered comprehensive privacy policy evaluation
-  - India DPDP Act 2023 compliance assessment
+  - **Dual Scoring System**:
+    - **Overall Privacy Score (1-10)**: User-focused assessment of data protection and privacy practices
+    - **DPDP Compliance Score (1-10)**: Regulatory compliance evaluation against DPDP Act 2023 and Rules 2025
+  - India DPDP Act 2023 and Rules 2025 compliance assessment
   - 6 weighted categories: Data Minimization & Collection (30%), Third-Party Data Sharing (25%), Individual Rights & Controls (20%), Security & Risk Management (15%), Regulatory Compliance (7%), Transparency & Communication (3%)
+  - Evaluation against all 23 Rules and 7 Schedules including:
+    - Rule 6: Security safeguards
+    - Rule 7: 72-hour breach notification
+    - Rule 8: Data retention periods (Class A/B/C Data Fiduciaries)
+    - Rule 12: Children's data processing exemptions
+    - Rule 13: Significant Data Fiduciary obligations (DPIA, DPO, audits)
+    - Rule 14: Data Principal rights implementation
+    - Rule 15: Cross-border transfer requirements
   - 5-tier risk classification (HIGH RISK, MODERATE-HIGH RISK, MODERATE RISK, LOW RISK, EXEMPLARY)
   - Letter grades (A+ to F) for quick assessment
-  - Evidence-based findings with specific DPDP Act regulatory references
+  - Evidence-based findings with specific DPDP Act sections and Rules references
 
 - **📊 Interactive Results Dashboard**
-  - Overall privacy score (1-10 scale) with circular progress visualization
+  - Dual score display:
+    - Overall Privacy Score (1-10) with circular progress visualization
+    - DPDP Compliance Score (1-10) with regulatory compliance summary
   - Real-time category breakdown with color-coded mini charts
   - Privacy grade and risk level badges
   - Executive summary for stakeholders
+  - Compliance summary specifically for business owners and legal teams
   - Critical findings highlighting high-risk practices
+  - Regulatory gaps with specific DPDP Act and Rules violations
   - Positive practices recognition
   - Actionable recommendations (immediate, medium-term, best practices)
-  - Detailed regulatory compliance notes
+  - Detailed regulatory compliance notes with Act sections and Rules references
 
 - **🎨 Enhanced User Experience**
   - Web3-style gradient buttons (blue-purple-pink for Analyze, emerald-teal-cyan for Reset)
@@ -112,44 +130,85 @@ PrivacyHub is a production-ready, AI-powered privacy policy analyzer that empowe
 
 ## 📐 Analysis Methodology
 
-PrivacyHub uses a scientifically-grounded, evidence-based framework for privacy assessment focused on India's DPDP Act 2023:
+PrivacyHub uses a scientifically-grounded, evidence-based framework for privacy assessment focused on India's DPDP Act 2023 and DPDP Rules 2025:
+
+### Dual Scoring System
+
+We provide two distinct scores to serve different audiences:
+
+**1. Overall Privacy Score (User Perspective)**
+- **Range**: 1-10
+- **Focus**: How well the policy protects user privacy and data rights
+- **Audience**: General users wanting to understand privacy risks
+- **Factors**: User data protection, transparency, control, privacy-friendly practices
+
+**2. DPDP Compliance Score (Business/Regulatory Perspective)**
+- **Range**: 1-10
+- **Focus**: Compliance with DPDP Act 2023 and Rules 2025 statutory requirements
+- **Audience**: Business owners, compliance officers, legal teams
+- **Evaluation Criteria**:
+  - Notice requirements (Sec. 5, Rule 3)
+  - Consent mechanisms (Sec. 6, Rule 3)
+  - Data Principal rights (Sec. 11-13, Rule 14)
+  - Security safeguards (Sec. 8, Rule 6)
+  - 72-hour breach notification (Rule 7)
+  - Retention periods (Rule 8, Third Schedule)
+  - Children's data processing (Sec. 9, Rule 12, Fourth Schedule)
+  - Consent Manager obligations (Rule 4, First Schedule)
+  - Significant Data Fiduciary requirements (Rule 13)
+  - Cross-border transfers (Sec. 16, Rule 15)
+  - Grievance redressal (Sec. 32)
+  - DPO appointment where required (Rule 13)
+
+**Why Two Scores?**
+
+A privacy policy could score high on regulatory compliance (meets all legal requirements) but still have user-unfriendly practices like extensive data sharing. Conversely, a policy might be very user-friendly but missing some regulatory formalities. The dual scoring helps both users and businesses understand the complete picture.
 
 ### Assessment Categories (Weighted)
 
 1. **Data Minimization & Collection (30%)**
    - Collection scope, legal basis, purpose specification
    - Sensitive personal data protections (DPDP Act Sec. 9)
-   - Children's data compliance (DPDP Act Sec. 9)
+   - Children's data compliance (DPDP Act Sec. 9, Rule 12, Fourth Schedule)
    - Data fiduciary obligations and transparency
+   - Retention period compliance (Rule 8, Third Schedule - Class A/B/C Data Fiduciaries)
+   - Automatic deletion mechanisms post-purpose completion
 
 2. **Third-Party Data Sharing (25%)**
    - Sharing scope and commercial exploitation
-   - International transfers and cross-border data flow (DPDP Act Sec. 16)
+   - International transfers to approved countries (DPDP Act Sec. 16, Rule 15)
    - Data processor agreements (DPDP Act Sec. 8)
-   - Consent Manager integration readiness
+   - Consent Manager compliance (Rule 4, First Schedule)
+   - State data processing exemptions (Rule 5, Second Schedule)
 
 3. **Individual Rights & Controls (20%)**
-   - Data Principal rights: access, correction, erasure (DPDP Act Sec. 11-12)
+   - Data Principal rights implementation (DPDP Act Sec. 11-13, Rule 14)
+   - Rights: access, correction, erasure, grievance redressal, nomination
    - Data portability and objection mechanisms
    - Grievance redressal mechanisms (DPDP Act Sec. 32)
-   - Withdrawal of consent (DPDP Act Sec. 7)
+   - Consent withdrawal procedures (DPDP Act Sec. 7, Rule 14)
 
 4. **Security & Risk Management (15%)**
+   - Security safeguards commensurate with data sensitivity (Rule 6)
    - Encryption standards (end-to-end, in-transit, at-rest)
-   - Incident response and breach notification
+   - 72-hour breach notification to Data Protection Board (Rule 7)
+   - Breach disclosure to affected Data Principals (Rule 7)
+   - Data Protection Impact Assessments for Significant Data Fiduciaries (Rule 13)
    - Data localization compliance for India
-   - Reasonable security safeguards (DPDP Act Sec. 8)
 
 5. **Regulatory Compliance (7%)**
-   - DPDP Act 2023 compliance indicators
-   - Data Protection Board registration requirements
-   - Data fiduciary and Significant Data Fiduciary obligations
-   - Consent Manager framework compliance
+   - DPDP Act 2023 and Rules 2025 compliance indicators
+   - Data Protection Board registration (Rules 16-22)
+   - Significant Data Fiduciary obligations: DPO, DPIA, audits, logging (Rule 13)
+   - Consent Manager registration and technical standards (Rule 4, First Schedule)
+   - Legal basis documentation and consent records management (Rule 3)
 
 6. **Transparency & Communication (3%)**
    - Plain language usage and readability
+   - Notice content completeness (Rule 3 requirements)
    - Grievance officer details (DPDP Act requirement)
    - Vernacular language support for Indian languages
+   - Consent clarity without dark patterns (Rule 4, First Schedule)
    - Proactive change notifications
 
 ### Risk Classification
@@ -183,10 +242,11 @@ PrivacyHub uses a scientifically-grounded, evidence-based framework for privacy 
   - Native fetch API (final fallback)
 
 ### Infrastructure
-- **Hosting**: Vercel (recommended) or self-hosted
-- **CDN**: Vercel Edge Network
+- **Hosting**: Vercel or Cloudflare Workers (edge deployment)
+- **Database**: Cloudflare D1 (serverless SQL for caching)
+- **CDN**: Vercel Edge Network / Cloudflare CDN
 - **Analytics**: Vercel Analytics (optional)
-- **Deployment**: CI/CD via Vercel Git integration
+- **Deployment**: CI/CD via Vercel Git integration or Cloudflare Pages
 
 ### Security & Performance
 - Input validation and URL sanitization
@@ -273,7 +333,7 @@ privacyhub/
 │   ├── app/                          # Next.js App Router
 │   │   ├── api/
 │   │   │   └── analyze/
-│   │   │       └── route.ts         # Privacy analysis API endpoint
+│   │   │       └── route.ts         # Privacy analysis API endpoint with DPDP Rules 2025
 │   │   ├── methodology/
 │   │   │   └── page.tsx             # Methodology explanation page
 │   │   ├── error.tsx                # Global error boundary
@@ -293,8 +353,18 @@ privacyhub/
 │   │   ├── PrivacyAnalyzer.tsx      # Main analyzer component
 │   │   └── MethodologySection.tsx   # Methodology display
 │   ├── lib/
-│   │   └── input-validation.ts      # URL validation and sanitization
+│   │   ├── input-validation.ts      # URL validation and sanitization
+│   │   ├── d1-database.ts           # Cloudflare D1 database integration
+│   │   └── openrouter-key-manager.ts # API key rotation
+│   ├── types/
+│   │   └── cloudflare.d.ts          # Cloudflare Workers type definitions
 │   └── middleware.ts                # Security headers
+├── docs/
+│   └── regulations/
+│       ├── DPDP_Rules_2025.pdf      # DPDP Rules 2025 full text (2.5 MB)
+│       └── DPDP_RULES_2025_INTEGRATION.md  # Integration guide
+├── migrations/
+│   └── 0001_initial_schema.sql      # D1 database schema for caching
 ├── public/
 │   ├── favicon.ico                  # Favicon (all sizes)
 │   ├── robots.txt                   # Search engine directives
@@ -302,7 +372,9 @@ privacyhub/
 ├── .env.example                     # Environment variable template
 ├── next.config.ts                   # Next.js configuration
 ├── tailwind.config.ts               # Tailwind CSS configuration
+├── wrangler.toml                    # Cloudflare Workers configuration
 ├── vercel.json                      # Vercel deployment config
+├── DEPLOYMENT.md                    # Deployment guide (Vercel + Cloudflare)
 └── package.json                     # Dependencies and scripts
 ```
 
@@ -353,11 +425,14 @@ privacyhub/
   "scraper_used": "firecrawl",
   "analysis": {
     "overall_score": 8.0,
+    "dpdp_compliance_score": 8.5,
     "risk_level": "LOW",
     "privacy_grade": "A-",
     "regulatory_compliance": {
       "dpdp_act_compliance": "COMPLIANT",
-      "major_violations": []
+      "dpdp_rules_compliance": "COMPLIANT",
+      "major_violations": [],
+      "compliance_summary": "Policy demonstrates strong DPDP Act 2023 and Rules 2025 compliance with comprehensive notice provisions, clear consent mechanisms, and proper Data Principal rights implementation."
     },
     "categories": {
       "data_collection": {
@@ -449,6 +524,44 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 - CORS headers configured
 - Automatic HTTPS
 
+### Cloudflare Workers (Edge Deployment)
+
+Blazing-fast edge deployment with global distribution and D1 database caching.
+
+1. **Prerequisites**
+   - Cloudflare account
+   - Wrangler CLI: `npm install -g wrangler`
+
+2. **Create D1 Database**
+   ```bash
+   wrangler d1 create privacyhub
+   # Copy the database_id and update wrangler.toml
+   ```
+
+3. **Run Migrations**
+   ```bash
+   wrangler d1 execute privacyhub --file=./migrations/0001_initial_schema.sql
+   ```
+
+4. **Configure Secrets**
+   ```bash
+   wrangler secret put OPENROUTER_API
+   wrangler secret put FIRECRAWL_API_KEY  # Optional
+   ```
+
+5. **Deploy**
+   ```bash
+   npm run build:cf && wrangler deploy
+   ```
+
+**Cloudflare Benefits**:
+- Global edge network with <50ms latency
+- D1 database for analysis result caching
+- Automatic scaling and DDoS protection
+- Cost-effective for high traffic
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
+
 ### Self-Hosting
 
 Requirements:
@@ -475,7 +588,15 @@ pm2 start npm --name "privacyhub" -- start
 
 ## 🗺️ Roadmap
 
-### Version 1.1 (Current - Q4 2024)
+### Version 1.2 (Current - Q4 2025)
+- [x] DPDP Rules 2025 integration (all 23 Rules and 7 Schedules)
+- [x] Dual scoring system (User Privacy Score + DPDP Compliance Score)
+- [x] Cloudflare Workers deployment support
+- [x] D1 database caching for analysis results
+- [x] Enhanced regulatory compliance assessment
+- [x] Comprehensive documentation updates
+
+### Version 1.1 (Completed - Q4 2024)
 - [x] Category breakdown visualization
 - [x] Web3-style gradient UI enhancements
 - [x] Navigation improvements (Home, Reset buttons)
@@ -483,12 +604,12 @@ pm2 start npm --name "privacyhub" -- start
 - [x] Enhanced error handling
 - [x] Stateless architecture (no database dependency)
 
-### Version 1.2 (Q1 2025)
+### Version 1.3 (Q1 2026)
 - [ ] Multi-language support (Hindi, Spanish, French)
 - [ ] Privacy policy comparison tool
-- [ ] Export analysis as PDF
+- [ ] Export analysis as PDF with compliance report
 - [ ] Browser extension
-- [ ] Historical policy tracking
+- [ ] Historical policy tracking with change detection
 
 ### Version 2.0 (Q2 2025)
 - [ ] Mobile app (React Native)
@@ -524,6 +645,9 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 ### Regulatory Framework
 
 - [DPDP Act 2023](https://www.meity.gov.in/static/uploads/2024/06/2bf1f0e9f04e6fb4f8fef35e82c42aa5.pdf) - Digital Personal Data Protection Act (India)
+- **DPDP Rules 2025** - Digital Personal Data Protection Rules, 2025 (Notified Nov 13, 2025) - Full text included in `/docs/regulations/`
+  - 23 Rules covering notice, consent, rights, security, breach notification, retention, and more
+  - 7 Schedules detailing Consent Manager requirements, retention periods, children's data exemptions, etc.
 - [IT Act 2000](https://www.meity.gov.in/content/information-technology-act) - Information Technology Act (India)
 - [IT Rules 2011](https://www.meity.gov.in/content/information-technology-rules-2011) - Reasonable Security Practices and Procedures
 
