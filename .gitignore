@@ -53,6 +53,7 @@ next-env.d.ts
 # Cloudflare Wrangler
 .wrangler/
 .dev.vars
+.worker-next/
 
 # OpenNext build output
 .open-next/

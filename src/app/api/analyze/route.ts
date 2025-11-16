@@ -15,9 +15,9 @@ import {
   type D1Database
 } from '@/lib/d1-database';
 
-// Vercel runtime configuration
-// Extend timeout for privacy policy analysis (OpenRouter API + scraping)
-export const maxDuration = 60; // 60 seconds (Vercel Pro plan)
+// Runtime configuration
+// Note: Cloudflare Workers have their own timeout limits configured in wrangler.toml
+export const runtime = 'edge'; // Use Edge Runtime for Cloudflare compatibility
 export const dynamic = 'force-dynamic';
 
 // Helper function to get D1 database from Cloudflare Workers environment
@@ -44,7 +44,7 @@ function getD1Database(): D1Database | undefined {
 // Initialize OpenAI client with best available API key
 async function getOpenAIClient(env?: Record<string, string | undefined> | { DB?: D1Database }) {
   // Extract only string environment variables for the key manager
-  const envVars: Record<string, string | undefined> | undefined = 
+  const envVars: Record<string, string | undefined> | undefined =
     env && typeof env === 'object' && !('DB' in env) ? env as Record<string, string | undefined> : undefined;
   const keyInfo = await getBestAvailableKey(envVars);
 
@@ -295,110 +295,154 @@ async function scrapeWithCrawlee(url: string, captureScreenshot: boolean = false
 }
 
 const PRIVACY_ANALYSIS_PROMPT = `
-You are a certified privacy policy expert specializing in India's Digital Personal Data Protection Act (DPDP Act) 2023. Conduct a comprehensive privacy impact assessment focused on Indian data protection requirements and user rights.
+You are a certified privacy policy expert specializing in India's Digital Personal Data Protection Act (DPDP Act) 2023 and the Digital Personal Data Protection Rules 2025. Conduct a comprehensive privacy impact assessment focused on Indian data protection requirements and user rights under both the Act and the Rules.
 
-SCORING METHODOLOGY: Rate each category 1-10 (10 = exemplary privacy protection, 1 = significant privacy risk)
+DUAL SCORING METHODOLOGY:
+
+1. **OVERALL PRIVACY SCORE (User Perspective)**: Rate 1-10 based on how well the policy protects user privacy and data rights
+   - Focus: User data protection, transparency, control, and privacy-friendly practices
+   - Audience: General users wanting to understand privacy risks
+   - 10 = Exemplary user privacy protection, 1 = Significant privacy risk to users
+
+2. **DPDP COMPLIANCE SCORE (Business/Regulatory Perspective)**: Rate 1-10 based on compliance with DPDP Act 2023 and Rules 2025
+   - Focus: Statutory requirements, legal obligations, regulatory compliance
+   - Audience: Business owners, compliance officers, legal teams
+   - 10 = Full DPDP Act and Rules compliance, 1 = Major regulatory violations
+   - Evaluate against specific requirements:
+     * Notice requirements (Sec. 5, Rule 3)
+     * Consent mechanisms (Sec. 6, Rule 3)
+     * Data Principal rights implementation (Sec. 11-13, Rule 14)
+     * Security safeguards (Sec. 8, Rule 6)
+     * Breach notification (Rule 7 - 72 hour timeline)
+     * Retention periods (Rule 8, Third Schedule)
+     * Children's data (Sec. 9, Rule 12, Fourth Schedule)
+     * Consent Manager obligations (Rule 4, First Schedule) if applicable
+     * Significant Data Fiduciary requirements (Rule 13) if applicable
+     * Cross-border transfers (Sec. 16, Rule 15)
+     * Grievance redressal (Sec. 32)
+     * DPO appointment where required (Rule 13)
+
+CATEGORY SCORING: Rate each category 1-10 (10 = exemplary privacy protection, 1 = significant privacy risk)
 
 **DATA MINIMIZATION & COLLECTION PRACTICES (Weight: 30%)**
-Evaluate against DPDP Act 2023 Sec. 5 and privacy-by-design principles:
+Evaluate against DPDP Act 2023 Sec. 5 and DPDP Rules 2025 privacy-by-design principles:
 - Collection scope: Only necessary data for stated purposes (10), excessive collection without justification (1-3)
 - Legal basis clarity: Explicit lawful basis identification per Sec. 6 DPDP Act
 - Purpose specification: Clear, specific purposes vs. vague "business operations"
 - Sensitive personal data handling: Special protections per Sec. 9 DPDP Act
-- Children's data: DPDP Act Sec. 9 compliance for minors (verifiable parental consent)
-- Notice and consent: Clear, informed, free, specific and unambiguous consent mechanisms (Sec. 6)
+- Children's data: DPDP Act Sec. 9 compliance with Rule 12 (Fourth Schedule exemptions for education/health services requiring verifiable parental consent)
+- Notice and consent: Clear, informed, free, specific and unambiguous consent mechanisms (Sec. 6, Rule 3)
+- Retention periods: Compliance with Rule 8 (Third Schedule) - Class A (3 years), Class B (10 years), Class C (indefinite with justification)
+- Data minimization enforcement: Automatic deletion mechanisms post-purpose completion (Rule 8)
 
 **THIRD-PARTY DATA SHARING & TRANSFERS (Weight: 25%)**
 Assess Data Fiduciary/Data Processor relationships and transfer mechanisms:
 - Sharing scope: No sharing (10), limited with consent (7-8), extensive commercial sharing (1-4)
-- International transfers: Cross-border data transfer compliance (DPDP Act Sec. 16) to approved countries
+- International transfers: Cross-border compliance (DPDP Act Sec. 16, Rule 15) to approved countries/jurisdictions notified by Central Government
 - Processor agreements: Evidence of Sec. 8 DPDP Act compliant contracts with Data Processors
-- Consent mechanisms: Granular, withdrawable consent vs. bundled/forced consent (Sec. 6)
+- Consent mechanisms: Granular, withdrawable consent vs. bundled/forced consent (Sec. 6, Rule 3)
+- Consent Manager registration: For organizations acting as Consent Managers, compliance with Rule 4 and First Schedule (registration, record-keeping, withdrawal mechanisms, transparency)
 - Data localization: Compliance for specified personal data categories
 - Commercial exploitation: Data monetization practices and user awareness
 - Third-party audit rights and oversight mechanisms
+- State processing exemptions: If applicable, adherence to Rule 5 (Second Schedule) for government data processing
 
 **INDIVIDUAL RIGHTS & DATA PRINCIPAL CONTROLS (Weight: 20%)**
-Evaluate DPDP Act Chapter IV rights implementation for Data Principals:
-- Right to access (Sec. 11): Summary and comprehensive data access mechanisms
-- Right to correction (Sec. 12): Error rectification and data updation processes
-- Right to erasure (Sec. 12): Data deletion implementation and exceptions
-- Right to grievance redressal (Sec. 32): Grievance Officer designation and complaint handling
-- Right to nominate (Sec. 13): Nomination facility for deceased users' data
-- Withdrawal of consent (Sec. 7): Easy, accessible withdrawal mechanisms
-- Response timeframes: Reasonable time compliance as required by DPDP Act
+Evaluate DPDP Act Chapter IV and Rule 14 rights implementation for Data Principals:
+- Right to access (Sec. 11, Rule 14): Summary and comprehensive data access mechanisms within reasonable timeframes
+- Right to correction (Sec. 12, Rule 14): Error rectification and data updation processes
+- Right to erasure (Sec. 12, Rule 14): Data deletion implementation and statutory exceptions
+- Right to grievance redressal (Sec. 32): Grievance Officer designation, contact details, and complaint handling
+- Right to nominate (Sec. 13, Rule 14): Nomination facility for deceased users' data management
+- Withdrawal of consent (Sec. 7, Rule 14): Easy, accessible, and prompt withdrawal mechanisms
+- Response timeframes: Reasonable time compliance as required by DPDP Act and Rules
+- Consent Manager facilitation: If using Consent Managers, seamless rights exercise through platform (Rule 4)
 
 **SECURITY & RISK MANAGEMENT (Weight: 15%)**
-Technical and organizational measures assessment per DPDP Act Sec. 8:
+Technical and organizational measures assessment per DPDP Act Sec. 8 and Rule 6:
+- Security safeguards (Rule 6): Reasonable security measures commensurate with nature, volume, and sensitivity of data
 - Encryption standards: End-to-end, in-transit, at-rest protections
-- Access controls: Role-based access, multi-factor authentication
-- Incident response: Breach notification procedures to Data Protection Board and users (Sec. 8)
-- Risk assessment: Regular privacy and security impact assessments
-- Data retention: Defined, justified retention periods with deletion schedules (Sec. 10)
+- Access controls: Role-based access, multi-factor authentication, need-to-know principle
+- Incident response: Breach notification procedures within 72 hours to Data Protection Board (Rule 7) and users
+- Breach disclosure: Information to affected Data Principals about nature of breach and remedial actions (Rule 7)
+- Risk assessment: Regular privacy and security impact assessments, especially for Significant Data Fiduciaries (Rule 13)
+- Data retention: Defined, justified retention periods with automatic deletion schedules (Rule 8, Third Schedule)
 - Data localization: Storage and processing location compliance
 - Third-party processor security: Contractual safeguards and audit provisions
+- DPIA requirements: For Significant Data Fiduciaries, documented Data Protection Impact Assessments (Rule 13)
 
 **REGULATORY COMPLIANCE & LEGAL FRAMEWORK (Weight: 7%)**
-DPDP Act 2023 compliance evaluation for Indian users:
-- Data Fiduciary registration and Data Protection Officer (DPO) designation
+DPDP Act 2023 and Rules 2025 compliance evaluation for Indian users:
+- Data Fiduciary registration and Data Protection Officer (DPO) designation where required
 - Grievance Officer appointment and contact information (Sec. 32)
-- Data Protection Board registration requirements (Sec. 25) where applicable
-- Significant Data Fiduciary obligations compliance
-- Legal basis documentation and consent records management
+- Data Protection Board registration requirements (Sec. 25, Rules 16-22) where applicable
+- Significant Data Fiduciary obligations: DPO appointment, DPIA, periodic audits, logging (Rule 13)
+- Consent Manager obligations: If applicable, registration, technical standards, withdrawal mechanisms (Rule 4, First Schedule)
+- Legal basis documentation and consent records management (Rule 3)
 - Privacy policy availability in English and vernacular Indian languages
 - Compliance with sectoral regulations (IT Act, RBI guidelines, TRAI regulations)
+- Board composition awareness: Understanding of Data Protection Board structure (Rule 16, Fifth Schedule) for appeals
 
 **TRANSPARENCY & COMMUNICATION (Weight: 3%)**
 Information quality and accessibility assessment:
 - Language clarity: Plain language in English and Hindi/regional languages vs. legal jargon
 - Policy accessibility: Mobile optimization, vernacular language support for Indian users
-- Notice timing: Clear notice at or before collection of personal data (Sec. 5)
+- Notice timing: Clear notice at or before collection of personal data (Sec. 5, Rule 3)
+- Notice content: All elements per Rule 3 (purpose, nature of data, rights, grievance mechanism, contact details)
 - Change notification: Proactive notification mechanisms for policy updates
-- Contact mechanisms: Dedicated Grievance Officer and Data Protection Officer information
+- Contact mechanisms: Dedicated Grievance Officer and Data Protection Officer information (if applicable)
 - Indian grievance redressal timeline: Compliance with specified resolution timeframes
+- Consent clarity: For Consent Managers, clear presentation of consent requests without dark patterns (Rule 4, First Schedule)
 
 RISK CATEGORIZATION:
-- HIGH RISK (1-3): Significant DPDP Act violations likely, Data Protection Board action probable
+- HIGH RISK (1-3): Significant DPDP Act/Rules violations likely, Data Protection Board action probable
 - MODERATE-HIGH RISK (4-5): Multiple compliance gaps, Data Principal rights compromised
 - MODERATE RISK (6-7): Some privacy protections present, improvement areas identified
 - LOW RISK (8-9): Strong privacy framework with minor gaps
-- EXEMPLARY (10): Privacy-by-design implementation, exceeds DPDP Act minimums
+- EXEMPLARY (10): Privacy-by-design implementation, exceeds DPDP Act and Rules minimums
 
 Provide your response in this JSON format:
 {
-  "overall_score": number (1-10, weighted average),
+  "overall_score": number (1-10, weighted average - USER PRIVACY PROTECTION FOCUS),
+  "dpdp_compliance_score": number (1-10 - REGULATORY COMPLIANCE FOCUS: how well policy meets DPDP Act 2023 and Rules 2025 statutory requirements),
   "risk_level": "string (HIGH/MODERATE-HIGH/MODERATE/LOW/EXEMPLARY)",
   "regulatory_compliance": {
     "dpdp_act_compliance": "string (COMPLIANT/PARTIALLY_COMPLIANT/NON_COMPLIANT)",
-    "major_violations": ["string array of specific DPDP Act violations"]
+    "dpdp_rules_compliance": "string (COMPLIANT/PARTIALLY_COMPLIANT/NON_COMPLIANT/NOT_APPLICABLE)",
+    "major_violations": ["string array of specific DPDP Act and Rules violations"],
+    "compliance_summary": "string - 2-3 sentence summary explaining the dpdp_compliance_score for business owners"
   },
   "categories": {
-    "data_collection": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections"},
-    "data_sharing": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections"},
-    "user_rights": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections"},
-    "security_measures": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections"},
-    "compliance_framework": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections"},
-    "transparency": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections"}
+    "data_collection": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections and Rules"},
+    "data_sharing": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections and Rules"},
+    "user_rights": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections and Rules"},
+    "security_measures": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections and Rules"},
+    "compliance_framework": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections and Rules"},
+    "transparency": {"score": number, "reasoning": "string with specific evidence from policy", "dpdp_notes": "string - relevant DPDP Act sections and Rules"}
   },
   "critical_findings": {
     "high_risk_practices": ["specific practices that pose significant privacy risks for Indian users"],
-    "regulatory_gaps": ["DPDP Act compliance requirements not met"],
+    "regulatory_gaps": ["DPDP Act and Rules compliance requirements not met"],
     "data_subject_impacts": ["potential harms to Indian Data Principals"]
   },
-  "positive_practices": ["privacy-protective practices that exceed DPDP Act minimum requirements"],
+  "positive_practices": ["privacy-protective practices that exceed DPDP Act and Rules minimum requirements"],
   "actionable_recommendations": {
-    "immediate_actions": ["urgent DPDP Act compliance actions required"],
+    "immediate_actions": ["urgent DPDP Act and Rules compliance actions required"],
     "medium_term_improvements": ["privacy enhancements for Indian users"],
     "best_practice_adoption": ["industry leading practices to consider for Indian market"]
   },
   "privacy_grade": "string (A+ to F based on risk level)",
-  "executive_summary": "Professional 2-3 sentence assessment for Indian stakeholders focusing on DPDP Act compliance"
+  "executive_summary": "Professional 2-3 sentence assessment for Indian stakeholders focusing on DPDP Act 2023 and Rules 2025 compliance"
 }
 `;
 
 export async function POST(request: NextRequest) {
   try {
     console.log('Privacy analysis request received');
+
+    // Get Cloudflare environment bindings
+    // In Cloudflare Workers, env is available through the request context
+    const env = (request as { env?: CloudflareEnv }).env || process.env as unknown as CloudflareEnv;
 
     // Rate limiting disabled for MVP
     // const clientIp = getClientIp(request);
@@ -436,24 +480,24 @@ export async function POST(request: NextRequest) {
 
     const sanitizedUrl = urlValidation.sanitized!;
 
-    // Get environment variables (Vercel uses process.env, Cloudflare Workers uses env binding)
-    const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY;
+    // Get environment variables from Cloudflare bindings or process.env (fallback for local dev)
+    const FIRECRAWL_API_KEY = env?.FIRECRAWL_API_KEY || process.env.FIRECRAWL_API_KEY;
 
     // Diagnostic logging for environment variable availability (without exposing actual keys)
     console.log('[Env Check] Available OpenRouter keys:', {
-      OPENROUTER_API: !!process.env.OPENROUTER_API,
-      OPENROUTER_API_1: !!process.env.OPENROUTER_API_1,
-      OPENROUTER_API_2: !!process.env.OPENROUTER_API_2,
+      OPENROUTER_API: !!(env?.OPENROUTER_API || process.env.OPENROUTER_API),
+      OPENROUTER_API_1: !!(env?.OPENROUTER_API_1 || process.env.OPENROUTER_API_1),
+      OPENROUTER_API_2: !!(env?.OPENROUTER_API_2 || process.env.OPENROUTER_API_2),
     });
 
     // No need to check OPENROUTER_API here - the key manager will handle it
 
     // Initialize D1 database for Cloudflare Workers
     let db: D1Database | undefined = undefined;
-    
+
     // Try to access D1 database from Cloudflare Workers environment
     db = getD1Database();
-    
+
     if (db) {
       console.log('[D1] Database binding found, initializing schema...');
       try {
@@ -839,7 +883,7 @@ export async function POST(request: NextRequest) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       let currentKeyName = '';
       try {
-        const openaiResult = await getOpenAIClient();
+        const openaiResult = await getOpenAIClient(env);
         if (!openaiResult) {
           throw new Error('No OpenRouter API keys available. Please configure OPENROUTER_API, OPENROUTER_API_1, or OPENROUTER_API_2 environment variables.');
         }
