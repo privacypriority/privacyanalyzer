@@ -2,7 +2,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import FirecrawlApp from '@mendable/firecrawl-js';
-import { PlaywrightCrawler } from '@crawlee/playwright';
 import { validateUrl } from '@/lib/input-validation';
 import { getBestAvailableKey, markKeyAsFailed } from '@/lib/openrouter-key-manager';
 import {
@@ -14,11 +13,13 @@ import {
   type AnalysisData,
   type D1Database
 } from '@/lib/d1-database';
+import { detectPlatform, hasNodeJSRuntime, getPlatformDescription } from '@/lib/platform-detector';
 
 // Runtime configuration
-// Use Node.js runtime for Playwright/Crawlee compatibility
-export const runtime = 'nodejs';
+// Use Edge runtime for compatibility with both Vercel and Cloudflare
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
+// maxDuration is Vercel-specific, ignored on Cloudflare
 export const maxDuration = 60; // 60 seconds max execution time (Vercel Pro)
 
 // Helper function to get D1 database from Cloudflare Workers environment
@@ -121,12 +122,21 @@ async function scrapeWithFetch(url: string): Promise<string> {
 }
 
 // Crawlee PlaywrightCrawler fallback scraper with anti-blocking features
+// Only available in Node.js runtime, not in Edge Runtime
 async function scrapeWithCrawlee(url: string, captureScreenshot: boolean = false): Promise<{ content: string; screenshot?: string }> {
+  // Check if we're running in Node.js environment with Playwright support
+  if (!hasNodeJSRuntime()) {
+    throw new Error('Playwright is not available in Edge Runtime. Use Firecrawl or fetch fallback instead.');
+  }
+
   let extractedContent = '';
   let screenshotBase64 = '';
   let lastError: Error | null = null;
 
   try {
+    // Dynamic import of Playwright to avoid loading in Edge Runtime
+    const { PlaywrightCrawler } = await import('@crawlee/playwright');
+
     const crawler = new PlaywrightCrawler({
       // Limit to single request for privacy policy extraction
       maxRequestsPerCrawl: 1,
@@ -439,6 +449,10 @@ Provide your response in this JSON format:
 
 export async function POST(request: NextRequest) {
   try {
+    // Detect platform and log capabilities
+    const platform = detectPlatform();
+    const platformDesc = getPlatformDescription();
+    console.log(`[Platform] Running on: ${platformDesc}`);
     console.log('Privacy analysis request received');
 
     // Get Cloudflare environment bindings
@@ -619,24 +633,32 @@ export async function POST(request: NextRequest) {
     }
 
     // Fallback to Crawlee if Firecrawl failed or API key not available
+    // Note: Playwright only works in Node.js runtime, not Edge Runtime
     if (!content || content.length < 100) {
-      console.log('Falling back to Crawlee PlaywrightCrawler...');
-      try {
-        const crawleeResult = await scrapeWithCrawlee(sanitizedUrl);
-        content = crawleeResult.content;
-        scraperUsed = 'crawlee';
+      // Try Playwright/Crawlee only if Node.js APIs are available
+      if (platform.hasNodeAPIs) {
+        console.log('Falling back to Crawlee PlaywrightCrawler...');
+        try {
+          const crawleeResult = await scrapeWithCrawlee(sanitizedUrl);
+          content = crawleeResult.content;
+          scraperUsed = 'crawlee';
 
-        if (!content || content.length < 100) {
-          throw new Error('Crawlee returned insufficient content');
+          if (!content || content.length < 100) {
+            throw new Error('Crawlee returned insufficient content');
+          }
+
+          console.log('Content extracted successfully with Crawlee, length:', content.length);
+
+        } catch (crawleeError) {
+          const crawleeErrorMsg = crawleeError instanceof Error ? crawleeError.message : String(crawleeError);
+          console.error('Crawlee fallback failed:', crawleeErrorMsg);
         }
+      } else {
+        console.log('[Platform] Playwright/Crawlee not available in Edge Runtime, skipping to fetch fallback');
+      }
 
-        console.log('Content extracted successfully with Crawlee, length:', content.length);
-
-      } catch (crawleeError) {
-        const crawleeErrorMsg = crawleeError instanceof Error ? crawleeError.message : String(crawleeError);
-        console.error('Crawlee fallback failed:', crawleeErrorMsg);
-
-        // Final fallback: simple fetch
+      // Final fallback: simple fetch (if Crawlee failed or wasn't available)
+      if (!content || content.length < 100) {
         console.log('Falling back to simple fetch...');
         try {
           content = await scrapeWithFetch(sanitizedUrl);

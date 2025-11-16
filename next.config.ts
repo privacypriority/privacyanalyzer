@@ -16,8 +16,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false, // Keep strict TypeScript checking
   },
 
-  // Webpack configuration to handle optional dependencies
-  webpack: (config, { isServer }) => {
+  // Webpack configuration to handle optional dependencies and Edge Runtime compatibility
+  webpack: (config, { isServer, nextRuntime }) => {
     // Ignore optional keyv adapters that are not needed
     // These are optional dependencies that keyv tries to dynamically require
     config.resolve = config.resolve || {};
@@ -32,6 +32,20 @@ const nextConfig: NextConfig = {
       '@keyv/offline': false,
       '@keyv/tiered': false,
     };
+
+    // For Edge Runtime, exclude Playwright/Crawlee and Node.js dependencies
+    if (nextRuntime === 'edge') {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@crawlee/playwright': false,
+        '@crawlee/browser-pool': false,
+        '@apify/ps-tree': false,
+        'child_process': false,
+        'fs': false,
+        'path': false,
+        'os': false,
+      };
+    }
 
     // Ignore these modules in externals for server-side builds
     if (isServer) {

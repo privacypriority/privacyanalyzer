@@ -1,4 +1,86 @@
-# Cloudflare Workers Deployment Guide
+# Deployment Guide
+
+PrivacyHub is designed to run on **both Vercel and Cloudflare Workers** with the same codebase. Choose the platform that best suits your needs.
+
+## Platform Comparison
+
+| Feature | Vercel | Cloudflare Workers |
+|---------|--------|-------------------|
+| **Edge Runtime** | ✅ Yes | ✅ Yes (Native) |
+| **Node.js Runtime** | ✅ Yes (Serverless Functions) | ⚠️ Limited (nodejs_compat) |
+| **Database** | Use external (PostgreSQL, etc.) | ✅ D1 (Built-in SQLite) |
+| **Deployment** | Git-based (automatic) | CLI or Git-based |
+| **Free Tier** | 100 GB-hours/month | 100,000 requests/day |
+| **Best For** | Rapid deployment, GitHub integration | Global edge performance, D1 database |
+
+## Quick Deploy
+
+### Vercel (Recommended for Quick Start)
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/privacypriority/privacyhub)
+
+1. Click the button above
+2. Add environment variables:
+   - `OPENROUTER_API`
+   - `FIRECRAWL_API_KEY` (optional)
+3. Deploy!
+
+### Cloudflare Workers (Recommended for Production)
+
+See detailed guide below for full D1 database integration and caching.
+
+---
+
+# Vercel Deployment
+
+## Prerequisites
+
+- Vercel account (free tier works)
+- OpenRouter API key ([get one here](https://openrouter.ai/))
+- Firecrawl API key (optional, [get one here](https://firecrawl.dev/))
+
+## Step 1: Connect Repository
+
+1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+2. Click **Add New** > **Project**
+3. Import your GitHub repository
+
+## Step 2: Configure Environment Variables
+
+Add these in **Settings** > **Environment Variables**:
+
+```bash
+OPENROUTER_API=your_primary_key_here
+OPENROUTER_API_1=your_backup_key_1_here  # Optional
+OPENROUTER_API_2=your_backup_key_2_here  # Optional
+FIRECRAWL_API_KEY=your_firecrawl_key_here  # Optional
+```
+
+## Step 3: Deploy
+
+Vercel will automatically deploy on every push to your main branch.
+
+### Manual Deployment
+
+```bash
+npm install -g vercel
+vercel login
+vercel
+```
+
+## Features Available on Vercel
+
+✅ Full scraping support (Firecrawl + Playwright + fetch fallback)
+✅ AI-powered analysis with OpenRouter
+✅ Edge Runtime for fast global responses
+✅ Automatic SSL/HTTPS
+⚠️ No built-in database (caching disabled, every request is fresh)
+
+**Note:** Vercel deployment works great but doesn't include D1 database caching. Each analysis will be fresh. For caching support, use Cloudflare Workers.
+
+---
+
+# Cloudflare Workers Deployment
 
 This guide will help you deploy PrivacyHub to Cloudflare Workers with full production configuration including D1 database, Browser Rendering, and all necessary bindings.
 

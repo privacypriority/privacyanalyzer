@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import FirecrawlApp from '@mendable/firecrawl-js';
-import { PlaywrightCrawler } from '@crawlee/playwright';
 import { validateUrl } from '@/lib/input-validation';
+import { hasNodeJSRuntime } from '@/lib/platform-detector';
 
-// Cloudflare Workers runtime configuration
-// Workers have 30s CPU time on free plan, configurable on paid plans
+// Runtime configuration for dual platform support (Vercel + Cloudflare)
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 // Initialize OpenAI client
 function getOpenAIClient() {
@@ -54,10 +55,19 @@ async function scrapeWithFetch(url: string): Promise<string> {
 }
 
 // Crawlee PlaywrightCrawler fallback
+// Only available in Node.js runtime, not in Edge Runtime
 async function scrapeWithCrawlee(url: string): Promise<string> {
+  // Check if we're running in Node.js environment with Playwright support
+  if (!hasNodeJSRuntime()) {
+    throw new Error('Playwright is not available in Edge Runtime. Use Firecrawl or fetch fallback instead.');
+  }
+
   let extractedContent = '';
 
   try {
+    // Dynamic import of Playwright to avoid loading in Edge Runtime
+    const { PlaywrightCrawler } = await import('@crawlee/playwright');
+
     const crawler = new PlaywrightCrawler({
       maxRequestsPerCrawl: 1,
       headless: true,
