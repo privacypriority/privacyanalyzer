@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npx @opennextjs/cloudflare build",
+    "build": "npx @opennextjs/cloudflare build",
     "build:cf": "npx @opennextjs/cloudflare build",
     "run:cf": "npx wrangler dev",
     "deploy:cf": "npx wrangler deploy --env=\"\"",
