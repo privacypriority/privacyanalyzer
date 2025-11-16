@@ -3,8 +3,6 @@
  * Optimized for Cloudflare Workers environment
  */
 
-import crypto from 'crypto';
-
 export interface D1Database {
   prepare(query: string): D1PreparedStatement;
   batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
@@ -157,9 +155,15 @@ export async function initializeDatabase(db: D1Database): Promise<void> {
 
 /**
  * Generate SHA-256 hash of content for cache key
+ * Uses Web Crypto API for Edge Runtime compatibility
  */
-export function generateContentHash(content: string): string {
-  return crypto.createHash('sha256').update(content).digest('hex');
+export async function generateContentHash(content: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(content);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
 }
 
 /**

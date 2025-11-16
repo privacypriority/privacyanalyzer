@@ -16,6 +16,43 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false, // Keep strict TypeScript checking
   },
 
+  // Webpack configuration to handle optional dependencies
+  webpack: (config, { isServer }) => {
+    // Ignore optional keyv adapters that are not needed
+    // These are optional dependencies that keyv tries to dynamically require
+    config.resolve = config.resolve || {};
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      '@keyv/redis': false,
+      '@keyv/mongo': false,
+      '@keyv/sqlite': false,
+      '@keyv/postgres': false,
+      '@keyv/mysql': false,
+      '@keyv/etcd': false,
+      '@keyv/offline': false,
+      '@keyv/tiered': false,
+    };
+
+    // Ignore these modules in externals for server-side builds
+    if (isServer) {
+      config.externals = config.externals || [];
+      if (Array.isArray(config.externals)) {
+        config.externals.push({
+          '@keyv/redis': 'commonjs @keyv/redis',
+          '@keyv/mongo': 'commonjs @keyv/mongo',
+          '@keyv/sqlite': 'commonjs @keyv/sqlite',
+          '@keyv/postgres': 'commonjs @keyv/postgres',
+          '@keyv/mysql': 'commonjs @keyv/mysql',
+          '@keyv/etcd': 'commonjs @keyv/etcd',
+          '@keyv/offline': 'commonjs @keyv/offline',
+          '@keyv/tiered': 'commonjs @keyv/tiered',
+        });
+      }
+    }
+
+    return config;
+  },
+
   // Image optimization
   images: {
     unoptimized: true, // Disable image optimization for Cloudflare Workers compatibility

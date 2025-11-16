@@ -8,8 +8,8 @@
     "node": ">=20.17.0"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "dev": "next dev",
+    "build": "next build",
     "build:cf": "npx @opennextjs/cloudflare build",
     "run:cf": "npx wrangler dev",
     "deploy:cf": "npx wrangler deploy --env=\"\"",

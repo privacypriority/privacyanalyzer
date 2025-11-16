@@ -16,9 +16,10 @@ import {
 } from '@/lib/d1-database';
 
 // Runtime configuration
-// Note: Cloudflare Workers have their own timeout limits configured in wrangler.toml
-export const runtime = 'edge'; // Use Edge Runtime for Cloudflare compatibility
+// Use Node.js runtime for Playwright/Crawlee compatibility
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // 60 seconds max execution time (Vercel Pro)
 
 // Helper function to get D1 database from Cloudflare Workers environment
 function getD1Database(): D1Database | undefined {
@@ -691,7 +692,7 @@ export async function POST(request: NextRequest) {
 
     // Check D1 cache for existing analysis with content change detection
     const domain = extractDomain(sanitizedUrl);
-    const contentHash = generateContentHash(content);
+    const contentHash = await generateContentHash(content);
 
     if (db) {
       console.log('[D1 Cache] Checking for cached analysis...');

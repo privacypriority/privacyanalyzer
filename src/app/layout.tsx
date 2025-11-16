@@ -4,7 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
-import SmoothScrollProvider from "@/components/SmoothScrollProvider";
+// import SmoothScrollProvider from "@/components/SmoothScrollProvider"; // Temporarily disabled - lenis dependency issue
 
 // Force rebuild: CSS cache invalidation
 
@@ -145,11 +145,11 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} ${jetbrainsMono.variable} ${poppins.variable} font-sans antialiased min-h-screen bg-white`}>
         <GoogleAnalytics measurementId="G-Y6PVP4X0SN" />
-        <SmoothScrollProvider>
+        {/* <SmoothScrollProvider> */}
           <Header />
           <main>{children}</main>
           <Footer />
-        </SmoothScrollProvider>
+        {/* </SmoothScrollProvider> */}
       </body>
     </html>
   );
