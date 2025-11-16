@@ -15,13 +15,12 @@ import {
 } from '@/lib/d1-database';
 import { detectPlatform, hasNodeJSRuntime, getPlatformDescription } from '@/lib/platform-detector';
 
-// Runtime configuration
-// Use Node.js runtime for better compatibility and Playwright support
-// This works on Vercel (serverless functions) and provides full scraping capabilities
-// For Cloudflare Workers deployment, the build process handles runtime adaptation
-export const runtime = 'nodejs';
+// Runtime configuration for Cloudflare Workers
+// Edge Runtime is required for Cloudflare Workers compatibility
+// Note: Playwright is not available in Edge Runtime - use Firecrawl or fetch fallback
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // 60 seconds max execution time (Vercel Pro)
+// maxDuration is ignored on Cloudflare Workers (Workers have their own timeout config)
 
 // Helper function to get D1 database from Cloudflare Workers environment
 function getD1Database(): D1Database | undefined {

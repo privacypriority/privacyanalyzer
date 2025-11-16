@@ -4,10 +4,9 @@ import FirecrawlApp from '@mendable/firecrawl-js';
 import { validateUrl } from '@/lib/input-validation';
 import { hasNodeJSRuntime } from '@/lib/platform-detector';
 
-// Runtime configuration - Node.js for Playwright support and longer timeouts
-export const runtime = 'nodejs';
+// Runtime configuration for Cloudflare Workers
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60;
 
 // Initialize OpenAI client
 function getOpenAIClient() {
