@@ -1,6 +1,10 @@
 # Deployment Guide
 
-PrivacyHub is designed to run on **both Vercel and Cloudflare Workers** with the same codebase. Choose the platform that best suits your needs.
+PrivacyHub uses a **dual-branch strategy** for optimal deployment on different platforms:
+- **`main` branch** → Vercel (Node.js runtime, full Playwright support)
+- **`worker` branch** → Cloudflare Workers (Edge runtime, D1 database caching)
+
+📖 **See [BRANCH-STRATEGY.md](./BRANCH-STRATEGY.md) for detailed branch management**
 
 ## Platform Comparison
 
@@ -17,15 +21,20 @@ PrivacyHub is designed to run on **both Vercel and Cloudflare Workers** with the
 
 ### Vercel (Recommended for Quick Start)
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/privacypriority/privacyhub)
+**Branch:** `main`
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/privacypriority/privacyhub&project-name=privacyhub&repository-name=privacyhub)
 
 1. Click the button above
-2. Add environment variables:
+2. **Important:** Select `main` branch for production
+3. Add environment variables:
    - `OPENROUTER_API`
    - `FIRECRAWL_API_KEY` (optional)
-3. Deploy!
+4. Deploy!
 
 ### Cloudflare Workers (Recommended for Production)
+
+**Branch:** `worker`
 
 See detailed guide below for full D1 database integration and caching.
 
@@ -82,9 +91,19 @@ vercel
 
 # Cloudflare Workers Deployment
 
-This guide will help you deploy PrivacyHub to Cloudflare Workers with full production configuration including D1 database, Browser Rendering, and all necessary bindings.
+**Branch:** `worker` (optimized for Edge Runtime and D1 database)
+
+This guide will help you deploy PrivacyHub to Cloudflare Workers with full production configuration including D1 database and edge caching.
 
 ## Prerequisites
+
+**First, switch to the worker branch:**
+
+```bash
+git checkout worker
+```
+
+## Requirements
 
 - Node.js 18+ installed
 - Cloudflare account (free tier works)
