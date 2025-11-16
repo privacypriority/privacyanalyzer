@@ -4,8 +4,8 @@ import FirecrawlApp from '@mendable/firecrawl-js';
 import { validateUrl } from '@/lib/input-validation';
 import { hasNodeJSRuntime } from '@/lib/platform-detector';
 
-// Runtime configuration for dual platform support (Vercel + Cloudflare)
-export const runtime = 'edge';
+// Runtime configuration - Node.js for Playwright support and longer timeouts
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 

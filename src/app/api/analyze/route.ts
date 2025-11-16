@@ -16,10 +16,11 @@ import {
 import { detectPlatform, hasNodeJSRuntime, getPlatformDescription } from '@/lib/platform-detector';
 
 // Runtime configuration
-// Use Edge runtime for compatibility with both Vercel and Cloudflare
-export const runtime = 'edge';
+// Use Node.js runtime for better compatibility and Playwright support
+// This works on Vercel (serverless functions) and provides full scraping capabilities
+// For Cloudflare Workers deployment, the build process handles runtime adaptation
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-// maxDuration is Vercel-specific, ignored on Cloudflare
 export const maxDuration = 60; // 60 seconds max execution time (Vercel Pro)
 
 // Helper function to get D1 database from Cloudflare Workers environment
@@ -97,7 +98,7 @@ async function scrapeWithFetch(url: string): Promise<string> {
         'Sec-Fetch-User': '?1',
         'Cache-Control': 'max-age=0',
       },
-      signal: AbortSignal.timeout(15000), // 15 second timeout
+      signal: AbortSignal.timeout(30000), // 30 second timeout
     });
 
     if (!response.ok) {
@@ -625,7 +626,8 @@ export async function POST(request: NextRequest) {
 
       } catch (firecrawlError) {
         const errorMsg = firecrawlError instanceof Error ? firecrawlError.message : String(firecrawlError);
-        console.error('Firecrawl failed:', errorMsg);
+        console.error('[Firecrawl] Failed:', errorMsg);
+        console.error('[Firecrawl] Full error:', firecrawlError);
         content = ''; // Reset content to trigger Crawlee fallback
       }
     } else {
