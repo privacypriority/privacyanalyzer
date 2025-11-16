@@ -32,7 +32,7 @@
   "dependencies": {
     "@crawlee/playwright": "^3.15.1",
     "@mendable/firecrawl-js": "^4.3.4",
-    "@opennextjs/cloudflare": "^1.11.0",
+    "@opennextjs/cloudflare": "^1.12.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-hover-card": "^1.1.15",
     "@radix-ui/react-popover": "^1.1.15",
@@ -54,7 +54,7 @@
     "jspdf": "^3.0.1",
     "lenis": "^1.3.11",
     "lucide-react": "^0.543.0",
-    "next": "15.5.2",
+    "next": "^14.2.18",
     "npm": "^11.6.2",
     "openai": "^5.19.1",
     "rate-limiter-flexible": "^5.0.3",
@@ -78,11 +78,10 @@
     "@types/react-dom": "^19",
     "@types/url-parse": "^1.4.11",
     "eslint": "^9",
-    "eslint-config-next": "15.5.2",
+    "eslint-config-next": "^14.2.18",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.8",
-    "typescript": "^5",
-    "wrangler": "^3.105.0"
+    "typescript": "^5"
   },
   "optionalDependencies": {
     "sharp": "^0.33.5"
