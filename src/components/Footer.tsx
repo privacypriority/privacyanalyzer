@@ -8,73 +8,104 @@ export function Footer() {
   return (
     <footer className="bg-gray-50 border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand */}
-          <div>
+          <div className="md:col-span-2">
             <Link href="/" className="flex items-center space-x-3 mb-4">
-              <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <Shield className="h-5 w-5 text-white" />
               </div>
-              <div className="text-xl font-bold text-gray-900">
+              <div className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 PrivacyHub.in
               </div>
             </Link>
-            <p className="text-sm text-gray-600">
-              AI-powered privacy policy analysis with DPDP Act 2023 compliance checks.
+            <p className="text-gray-600 max-w-md">
+              Professional privacy policy analyser powered by AI. Understand how websites handle your personal data with comprehensive scoring and regulatory compliance checks.
             </p>
           </div>
 
-          {/* Links */}
+          {/* Quick Links */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-3">Links</h3>
+            <h3 className="font-semibold text-gray-900 mb-3">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors text-sm">
-                  Privacy Analyser
+                <Link href="/" className="text-gray-600 hover:text-blue-600 transition-colors">
+                  Privacy Policy Analyser
                 </Link>
               </li>
               <li>
-                <Link href="/digital-fingerprint" className="text-gray-600 hover:text-gray-900 transition-colors text-sm">
-                  Digital Fingerprint
+                <Link href="/" className="text-gray-600 hover:text-blue-600 transition-colors">
+                  Analysis History
                 </Link>
               </li>
               <li>
-                <Link href="/methodology" className="text-gray-600 hover:text-gray-900 transition-colors text-sm">
+                <Link href="/methodology" className="text-gray-600 hover:text-blue-600 transition-colors">
                   Methodology
                 </Link>
               </li>
               <li>
-                <Link href="/for-website-owners" className="text-gray-600 hover:text-gray-900 transition-colors text-sm">
-                  For Website Owners
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-gray-600 hover:text-gray-900 transition-colors text-sm">
-                  About
+                <Link href="/about" className="text-gray-600 hover:text-blue-600 transition-colors">
+                  About Privacy
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Connect */}
+          {/* Infrastructure */}
           <div>
-            <h3 className="font-semibold text-gray-900 mb-3">Connect</h3>
+            <h3 className="font-semibold text-gray-900 mb-3">Infrastructure</h3>
             <ul className="space-y-2">
               <li>
                 <a
-                  href="https://github.com/privacypriority/privacyhub"
+                  href="https://www.cloudflare.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1 text-sm"
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
                 >
-                  <Github className="h-4 w-4" />
-                  Source Code
+                  Cloudflare (DNS & Security)
                 </a>
               </li>
               <li>
+                <a
+                  href="https://vercel.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  Hosted on Vercel
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://firecrawl.dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  Powered by Firecrawl
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://openrouter.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  AI via OpenRouter
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Support */}
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-3">Support</h3>
+            <ul className="space-y-2">
+              <li>
                 <Link
                   href="/support"
-                  className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1 text-sm"
+                  className="text-gray-600 hover:text-blue-600 transition-colors flex items-center gap-1"
                 >
                   <Heart className="h-4 w-4" />
                   Support Us
@@ -82,13 +113,22 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://www.cloudflare.com"
+                  href="https://github.com/privacypriority/privacyhub"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-600 hover:text-gray-900 transition-colors text-sm"
+                  className="text-gray-600 hover:text-blue-600 transition-colors flex items-center gap-1"
                 >
-                  Hosted on Cloudflare
+                  <Github className="h-4 w-4" />
+                  Source Code
                 </a>
+              </li>
+              <li>
+                <Link
+                  href="/for-website-owners"
+                  className="text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  For Website Owners
+                </Link>
               </li>
             </ul>
           </div>

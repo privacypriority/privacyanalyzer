@@ -16,7 +16,7 @@ import {
 export function SupportSection() {
   const apiCosts = [
     { service: 'Firecrawl API', cost: '$0.002/page', description: 'Web scraping and privacy policy extraction' },
-    { service: 'OpenRouter AI', cost: 'Free', description: 'OpenRouter Free model for privacy analysis' },
+    { service: 'OpenRouter AI', cost: '$0.001/1K tokens', description: 'DeepSeek AI model for privacy analysis' },
     { service: 'Vercel Hosting', cost: '$20/month', description: 'Serverless deployment and bandwidth' },
     { service: 'Database Storage', cost: '$5/month', description: 'Analysis history and user data' },
   ];
