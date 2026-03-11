@@ -1,23 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import React, { useState, useMemo } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { CircularProgress } from '@/components/ui/circular-progress';
-import { Heatmap } from '@/components/ui/heatmap';
-import { ScoreCard } from '@/components/ui/score-card';
-import { MethodologySection } from '@/components/MethodologySection';
-import { ShareButtons } from '@/components/ShareButtons';
-import { WebsiteScreenshot } from '@/components/WebsiteScreenshot';
-import { AlertCircle, CheckCircle, Search, ExternalLink, Shield, Lock, Eye, Users, FileText, Scale, Home, RotateCcw, MessageSquare } from 'lucide-react';
-import Link from 'next/link';
+import { AlertCircle, CheckCircle, Search, ExternalLink, Shield, Lock, Eye, Users, FileText, Scale, RotateCcw } from 'lucide-react';
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Doughnut, Radar, Bar } from 'react-chartjs-2';
+
+ChartJS.register(
+  RadialLinearScale,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+);
 
 interface AnalysisResult {
   url: string;
-  homepage_url?: string;
-  homepage_screenshot?: string | null;
   timestamp: string;
   analysis: {
     overall_score: number;
@@ -49,14 +66,306 @@ interface AnalysisResult {
   };
 }
 
-type AnalysisStep = 'idle' | 'fetching' | 'reading' | 'analyzing' | 'preparing' | 'complete';
+const CATEGORY_META: Record<string, { label: string; shortLabel: string; icon: React.ReactNode; weight: number }> = {
+  data_collection: { label: 'Data Collection', shortLabel: 'Collection', icon: <Shield className="h-4 w-4" />, weight: 30 },
+  data_sharing: { label: 'Data Sharing', shortLabel: 'Sharing', icon: <Users className="h-4 w-4" />, weight: 25 },
+  user_rights: { label: 'User Rights', shortLabel: 'Rights', icon: <Scale className="h-4 w-4" />, weight: 20 },
+  security_measures: { label: 'Security', shortLabel: 'Security', icon: <Lock className="h-4 w-4" />, weight: 15 },
+  compliance_framework: { label: 'Compliance', shortLabel: 'Compliance', icon: <FileText className="h-4 w-4" />, weight: 7 },
+  transparency: { label: 'Transparency', shortLabel: 'Transparency', icon: <Eye className="h-4 w-4" />, weight: 3 },
+};
+
+const CATEGORY_ORDER = ['data_collection', 'data_sharing', 'user_rights', 'security_measures', 'compliance_framework', 'transparency'];
+
+function getScoreColor(score: number) {
+  if (score >= 8) return '#16a34a';
+  if (score >= 6) return '#ca8a04';
+  if (score >= 4) return '#ea580c';
+  return '#dc2626';
+}
+
+// --- Score Doughnut Gauge ---
+function ScoreGauge({ score }: { score: number }) {
+  const color = getScoreColor(score);
+  const data = {
+    datasets: [{
+      data: [score, 10 - score],
+      backgroundColor: [color, '#f3f4f6'],
+      borderWidth: 0,
+      cutout: '78%',
+    }],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      tooltip: { enabled: false },
+      legend: { display: false },
+    },
+    rotation: -90,
+    circumference: 360,
+    animation: { animateRotate: true, duration: 1000 },
+  } as const;
+
+  return (
+    <div className="relative w-36 h-36 sm:w-40 sm:h-40">
+      <Doughnut data={data} options={options} />
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-bold" style={{ color }}>{score.toFixed(1)}</span>
+        <span className="text-xs text-gray-400">/10</span>
+      </div>
+    </div>
+  );
+}
+
+// --- Radar Chart ---
+function CategoryRadar({ categories }: { categories: Record<string, { score: number }> }) {
+  const labels = CATEGORY_ORDER.filter(k => categories[k]).map(k => CATEGORY_META[k]?.shortLabel || k);
+  const scores = CATEGORY_ORDER.filter(k => categories[k]).map(k => categories[k].score);
+
+  if (labels.length < 3) return null;
+
+  const data = {
+    labels,
+    datasets: [{
+      label: 'Score',
+      data: scores,
+      backgroundColor: 'rgba(31, 41, 55, 0.1)',
+      borderColor: '#1f2937',
+      borderWidth: 2,
+      pointBackgroundColor: '#1f2937',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      fill: true,
+    }],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: true,
+    scales: {
+      r: {
+        beginAtZero: true,
+        max: 10,
+        min: 0,
+        ticks: {
+          stepSize: 2,
+          display: true,
+          font: { size: 9 },
+          color: '#9ca3af',
+          backdropColor: 'transparent',
+        },
+        grid: {
+          color: '#e5e7eb',
+        },
+        angleLines: {
+          color: '#e5e7eb',
+        },
+        pointLabels: {
+          font: { size: 11, weight: 500 as const },
+          color: '#4b5563',
+        },
+      },
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1f2937',
+        titleFont: { size: 12 },
+        bodyFont: { size: 12 },
+        padding: 8,
+        cornerRadius: 6,
+        callbacks: {
+          label: (ctx: { parsed: { r: number } }) => ` ${ctx.parsed.r.toFixed(1)} / 10`,
+        },
+      },
+    },
+    animation: { duration: 800 },
+  } as const;
+
+  return (
+    <div className="w-full max-w-xs mx-auto">
+      <Radar data={data} options={options} />
+    </div>
+  );
+}
+
+// --- Horizontal Bar Chart ---
+function CategoryBarChart({ categories }: { categories: Record<string, { score: number }> }) {
+  const orderedKeys = CATEGORY_ORDER.filter(k => categories[k]);
+  const labels = orderedKeys.map(k => CATEGORY_META[k]?.label || k);
+  const scores = orderedKeys.map(k => categories[k].score);
+  const weights = orderedKeys.map(k => CATEGORY_META[k]?.weight || 0);
+
+  const barColors = scores.map(s => getScoreColor(s));
+
+  const data = {
+    labels,
+    datasets: [
+      {
+        label: 'Score',
+        data: scores,
+        backgroundColor: barColors.map(c => c + '33'),
+        borderColor: barColors,
+        borderWidth: 2,
+        borderRadius: 4,
+        barThickness: 24,
+      },
+      {
+        label: 'Weight %',
+        data: weights.map(w => w / 10), // Scale to 0-10 range for comparison
+        backgroundColor: 'rgba(156, 163, 175, 0.15)',
+        borderColor: '#d1d5db',
+        borderWidth: 1,
+        borderRadius: 4,
+        barThickness: 24,
+        hidden: true,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    indexAxis: 'y' as const,
+    scales: {
+      x: {
+        beginAtZero: true,
+        max: 10,
+        ticks: {
+          stepSize: 2,
+          font: { size: 10 },
+          color: '#9ca3af',
+        },
+        grid: {
+          color: '#f3f4f6',
+        },
+      },
+      y: {
+        ticks: {
+          font: { size: 11 },
+          color: '#4b5563',
+        },
+        grid: {
+          display: false,
+        },
+      },
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1f2937',
+        padding: 10,
+        cornerRadius: 6,
+        callbacks: {
+          label: (ctx: { parsed: { x: number | null }; datasetIndex: number }) => {
+            const val = ctx.parsed.x ?? 0;
+            if (ctx.datasetIndex === 0) return ` Score: ${val.toFixed(1)} / 10`;
+            return ` Weight: ${(val * 10).toFixed(0)}%`;
+          },
+        },
+      },
+    },
+    animation: { duration: 800 },
+  } as const;
+
+  return (
+    <div style={{ height: `${orderedKeys.length * 48 + 40}px` }}>
+      <Bar data={data} options={options} />
+    </div>
+  );
+}
+
+// --- Findings Donut ---
+function FindingsDonut({ findings }: { findings: { high: number; regulatory: number; impact: number } }) {
+  const total = findings.high + findings.regulatory + findings.impact;
+  if (total === 0) return null;
+
+  const segments = [
+    { count: findings.high, color: '#dc2626', label: 'High Risk' },
+    { count: findings.regulatory, color: '#ea580c', label: 'Regulatory Gaps' },
+    { count: findings.impact, color: '#ca8a04', label: 'Data Impact' },
+  ].filter(s => s.count > 0);
+
+  const data = {
+    labels: segments.map(s => s.label),
+    datasets: [{
+      data: segments.map(s => s.count),
+      backgroundColor: segments.map(s => s.color),
+      borderWidth: 0,
+      cutout: '60%',
+    }],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1f2937',
+        padding: 8,
+        cornerRadius: 6,
+      },
+    },
+    animation: { duration: 600 },
+  } as const;
+
+  return (
+    <div className="flex items-center gap-4">
+      <div className="w-20 h-20 flex-shrink-0 relative">
+        <Doughnut data={data} options={options} />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-sm font-bold text-gray-700">{total}</span>
+        </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        {segments.map((seg, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: seg.color }} />
+            <span className="text-xs text-gray-600">{seg.label} ({seg.count})</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- Compliance Gauge ---
+function ComplianceGauge({ status }: { status: string }) {
+  const levels = ['NON_COMPLIANT', 'PARTIALLY_COMPLIANT', 'COMPLIANT'];
+  const currentIdx = levels.indexOf(status);
+  const labels = ['Non-Compliant', 'Partial', 'Compliant'];
+  const colors = ['#dc2626', '#ca8a04', '#16a34a'];
+
+  return (
+    <div className="flex items-center gap-1">
+      {levels.map((_, i) => (
+        <div key={i} className="flex-1 flex flex-col items-center gap-1">
+          <div
+            className="w-full h-2 rounded-full transition-all duration-500"
+            style={{ backgroundColor: i <= currentIdx ? colors[i] : '#e5e7eb' }}
+          />
+          <span className={`text-[10px] ${i <= currentIdx ? 'text-gray-700 font-medium' : 'text-gray-400'}`}>
+            {labels[i]}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// --- Main Component ---
 
 export default function PrivacyAnalyzer() {
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState('');
-  const [currentStep, setCurrentStep] = useState<AnalysisStep>('idle');
+  const [progress, setProgress] = useState(0);
 
   const analyzePolicy = async () => {
     if (!url.trim()) {
@@ -67,83 +376,53 @@ export default function PrivacyAnalyzer() {
     setLoading(true);
     setError('');
     setResult(null);
-    setCurrentStep('fetching');
+    setProgress(10);
 
     try {
-      // Simulate step progression for better UX
-      setTimeout(() => setCurrentStep('reading'), 1000);
-      setTimeout(() => setCurrentStep('analyzing'), 3000);
-      setTimeout(() => setCurrentStep('preparing'), 25000);
+      const progressInterval = setInterval(() => {
+        setProgress(prev => Math.min(prev + Math.random() * 8, 90));
+      }, 2000);
 
       const response = await fetch('/api/analyze', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          url: url.trim()
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url.trim() }),
       });
+
+      clearInterval(progressInterval);
 
       if (!response.ok) {
         let errorMsg = 'Analysis failed. Please try again.';
-
         try {
           const contentType = response.headers.get('content-type');
-
           if (contentType?.includes('application/json')) {
             const errorData = await response.json();
-            errorMsg = errorData.error || 'Analysis failed';
-
-            // Include debug details if available
-            if (errorData.details) {
-              errorMsg += `\n\nDetails: ${errorData.details}`;
-            }
-            if (errorData.debugInfo) {
-              errorMsg += `\n\nDebug: ${JSON.stringify(errorData.debugInfo)}`;
-            }
+            errorMsg = errorData.error || errorMsg;
           } else {
-            // HTML error page or other non-JSON response
             const text = await response.text();
-
-            // Check if it's a Vercel error page or similar
             if (text.includes('<!DOCTYPE') || text.includes('<html')) {
-              if (response.status === 504 || text.includes('504') || text.includes('timeout')) {
-                errorMsg = 'The website took too long to respond. This might be due to bot protection or the site being temporarily unavailable. Please try again later.';
-              } else if (response.status === 502 || text.includes('502') || text.includes('Bad Gateway')) {
-                errorMsg = 'Unable to process this website. The site may have bot protection or be temporarily unavailable.';
-              } else if (response.status === 500) {
-                errorMsg = 'Server error occurred while analyzing this website. Please try a different URL or try again later.';
-              } else {
-                errorMsg = 'Unable to analyze this website. The site may have anti-bot protection preventing automated access. Please try a different privacy policy URL.';
-              }
-            } else {
-              errorMsg = text.substring(0, 200); // Show first 200 chars of error
+              if (response.status === 504) errorMsg = 'Request timed out. The website may have bot protection.';
+              else if (response.status === 502) errorMsg = 'Unable to process this website.';
+              else errorMsg = 'Unable to analyze this website. Try a different URL.';
             }
           }
-        } catch (parseError) {
-          // If we can't parse the error at all
-          errorMsg = `Request failed with status ${response.status}. The website may be blocking automated access or experiencing issues. Please try again later.`;
+        } catch {
+          errorMsg = `Request failed (${response.status}). Try again later.`;
         }
-
         throw new Error(errorMsg);
       }
 
+      setProgress(100);
       const data = await response.json();
-      setCurrentStep('complete');
-
-      // Small delay to show completion state
       setTimeout(() => {
         setResult(data);
         setLoading(false);
-        setCurrentStep('idle');
-      }, 500);
+        setProgress(0);
+      }, 300);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred during analysis';
-      console.error('[Analysis Error]', errorMessage);
-      setError(errorMessage);
+      setError(err instanceof Error ? err.message : 'An error occurred');
       setLoading(false);
-      setCurrentStep('idle');
+      setProgress(0);
     }
   };
 
@@ -152,743 +431,252 @@ export default function PrivacyAnalyzer() {
     setResult(null);
     setError('');
     setLoading(false);
-    setCurrentStep('idle');
+    setProgress(0);
   };
 
   const getGradeColor = (grade: string) => {
-    if (['A+', 'A', 'A-'].includes(grade)) return 'text-green-600 bg-green-50';
-    if (['B+', 'B', 'B-'].includes(grade)) return 'text-blue-600 bg-blue-50';
-    if (['C+', 'C', 'C-'].includes(grade)) return 'text-yellow-600 bg-yellow-50';
-    if (['D+', 'D', 'D-'].includes(grade)) return 'text-orange-600 bg-orange-50';
-    return 'text-red-600 bg-red-50';
+    if (grade.startsWith('A')) return 'bg-green-100 text-green-800';
+    if (grade.startsWith('B')) return 'bg-blue-100 text-blue-800';
+    if (grade.startsWith('C')) return 'bg-yellow-100 text-yellow-800';
+    if (grade.startsWith('D')) return 'bg-orange-100 text-orange-800';
+    return 'bg-red-100 text-red-800';
   };
 
-  const getRiskLevelColor = (riskLevel: string) => {
-    switch (riskLevel) {
-      case 'EXEMPLARY': return 'text-green-700 bg-green-100 border-green-200';
-      case 'LOW': return 'text-green-600 bg-green-50 border-green-200';
-      case 'MODERATE': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'MODERATE-HIGH': return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'HIGH': return 'text-red-600 bg-red-50 border-red-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
+  const getRiskColor = (risk: string) => {
+    if (risk === 'EXEMPLARY' || risk === 'LOW') return 'bg-green-50 text-green-700 border-green-200';
+    if (risk === 'MODERATE') return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+    return 'bg-red-50 text-red-700 border-red-200';
   };
 
-  const getComplianceColor = (status: string) => {
-    switch (status) {
-      case 'COMPLIANT': return 'text-green-600 bg-green-50';
-      case 'PARTIALLY_COMPLIANT': return 'text-yellow-600 bg-yellow-50';
-      case 'NON_COMPLIANT': return 'text-red-600 bg-red-50';
-      case 'NOT_APPLICABLE': return 'text-gray-600 bg-gray-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
-  };
+  const findingsCounts = useMemo(() => {
+    if (!result?.analysis?.critical_findings) return { high: 0, regulatory: 0, impact: 0 };
+    return {
+      high: result.analysis.critical_findings.high_risk_practices?.length || 0,
+      regulatory: result.analysis.critical_findings.regulatory_gaps?.length || 0,
+      impact: result.analysis.critical_findings.data_subject_impacts?.length || 0,
+    };
+  }, [result]);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 8) return 'text-green-600';
-    if (score >= 6) return 'text-blue-600';
-    if (score >= 4) return 'text-yellow-600';
-    return 'text-red-600';
-  };
+  const allFindings = useMemo(() => {
+    if (!result?.analysis?.critical_findings) return [];
+    return [
+      ...(result.analysis.critical_findings.high_risk_practices || []),
+      ...(result.analysis.critical_findings.regulatory_gaps || []),
+      ...(result.analysis.critical_findings.data_subject_impacts || []),
+    ];
+  }, [result]);
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-2 sm:px-4">
-      {/* Search Interface */}
-      <Card className="mb-6 sm:mb-8">
-        <CardContent className="p-4 sm:p-6">
-          <div className="space-y-4">
-            {/* URL Input */}
-            <div>
-              <label htmlFor="privacy-url" className="block text-sm font-semibold text-gray-700 mb-2">
-                Privacy Policy URL
-              </label>
-              <Input
-                id="privacy-url"
-                type="url"
-                placeholder="https://example.com/privacy-policy"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !loading && analyzePolicy()}
-                disabled={loading}
-                className="text-base h-12 focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Button
-                onClick={analyzePolicy}
-                disabled={loading || !url.trim()}
-                className="flex-1 h-12 text-base font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white border-0 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-2" />
-                    <span>Analyzing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Search className="h-5 w-5 mr-2" />
-                    <span>Analyze Privacy Policy</span>
-                  </>
-                )}
-              </Button>
-              {(url || result) && (
-                <Button
-                  onClick={resetAnalysis}
-                  disabled={loading}
-                  variant="outline"
-                  className="sm:w-auto h-12 text-base font-semibold border-2 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  <RotateCcw className="h-5 w-5 mr-2" />
-                  <span>Reset</span>
-                </Button>
-              )}
-            </div>
-
-            {error && (
-              <div className="flex items-start gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm">
-                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                <div className="text-xs sm:text-sm whitespace-pre-wrap break-words flex-1">{error}</div>
-              </div>
+    <div className="w-full max-w-3xl mx-auto">
+      {/* Search */}
+      <div className="mb-8">
+        <div className="flex gap-2">
+          <Input
+            type="url"
+            placeholder="https://example.com/privacy-policy"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !loading && analyzePolicy()}
+            disabled={loading}
+            className="h-12 text-base"
+          />
+          <Button
+            onClick={analyzePolicy}
+            disabled={loading || !url.trim()}
+            className="h-12 px-6 bg-gray-900 hover:bg-gray-800 text-white font-medium"
+          >
+            {loading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+            ) : (
+              <Search className="h-4 w-4" />
             )}
+          </Button>
+          {(url || result) && !loading && (
+            <Button onClick={resetAnalysis} variant="outline" className="h-12 px-3">
+              <RotateCcw className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        {error && (
+          <div className="flex items-start gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm mt-3">
+            <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <span className="text-sm">{error}</span>
           </div>
-        </CardContent>
-      </Card>
+        )}
+      </div>
 
-      {/* Loading State with Step-by-Step Progress */}
+      {/* Loading */}
       {loading && (
-        <Card className="bg-gradient-to-br from-blue-50 via-white to-purple-50 border-2 border-blue-100 shadow-xl">
-          <CardContent className="p-4 sm:p-6 md:p-8">
-            <div className="space-y-6">
-              {/* Header */}
-              <div className="text-center">
-                <h3 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                  Analyzing Privacy Policy
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-600">
-                  This typically takes 30-60 seconds
-                </p>
-              </div>
-
-              {/* Horizontal Steps and Progress */}
-              <div className="space-y-4">
-                {/* Steps Timeline - Horizontal */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {/* Step 1 */}
-                  <div className="flex flex-col items-center text-center">
-                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-2 transition-all ${
-                      currentStep === 'fetching' ? 'bg-blue-500 animate-pulse ring-4 ring-blue-200' :
-                      ['reading', 'analyzing', 'preparing', 'complete'].includes(currentStep) ? 'bg-green-500' :
-                      'bg-gray-300'
-                    }`}>
-                      {['reading', 'analyzing', 'preparing', 'complete'].includes(currentStep) ? (
-                        <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                      ) : currentStep === 'fetching' ? (
-                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-2 border-white border-t-transparent" />
-                      ) : (
-                        <span className="text-white font-bold text-sm">1</span>
-                      )}
-                    </div>
-                    <p className="text-xs sm:text-sm font-semibold text-gray-800">Fetching</p>
-                    <p className="text-xs text-gray-600 hidden sm:block">Policy URL</p>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="flex flex-col items-center text-center">
-                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-2 transition-all ${
-                      currentStep === 'reading' ? 'bg-blue-500 animate-pulse ring-4 ring-blue-200' :
-                      ['analyzing', 'preparing', 'complete'].includes(currentStep) ? 'bg-green-500' :
-                      'bg-gray-300'
-                    }`}>
-                      {['analyzing', 'preparing', 'complete'].includes(currentStep) ? (
-                        <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                      ) : currentStep === 'reading' ? (
-                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-2 border-white border-t-transparent" />
-                      ) : (
-                        <span className="text-white font-bold text-sm">2</span>
-                      )}
-                    </div>
-                    <p className="text-xs sm:text-sm font-semibold text-gray-800">Reading</p>
-                    <p className="text-xs text-gray-600 hidden sm:block">Parsing</p>
-                  </div>
-
-                  {/* Step 3 */}
-                  <div className="flex flex-col items-center text-center">
-                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-2 transition-all ${
-                      currentStep === 'analyzing' ? 'bg-blue-500 animate-pulse ring-4 ring-blue-200' :
-                      ['preparing', 'complete'].includes(currentStep) ? 'bg-green-500' :
-                      'bg-gray-300'
-                    }`}>
-                      {['preparing', 'complete'].includes(currentStep) ? (
-                        <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                      ) : currentStep === 'analyzing' ? (
-                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-2 border-white border-t-transparent" />
-                      ) : (
-                        <span className="text-white font-bold text-sm">3</span>
-                      )}
-                    </div>
-                    <p className="text-xs sm:text-sm font-semibold text-gray-800">Analyzing</p>
-                    <p className="text-xs text-gray-600 hidden sm:block">AI Review</p>
-                  </div>
-
-                  {/* Step 4 */}
-                  <div className="flex flex-col items-center text-center">
-                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-2 transition-all ${
-                      currentStep === 'preparing' ? 'bg-blue-500 animate-pulse ring-4 ring-blue-200' :
-                      currentStep === 'complete' ? 'bg-green-500' :
-                      'bg-gray-300'
-                    }`}>
-                      {currentStep === 'complete' ? (
-                        <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-                      ) : currentStep === 'preparing' ? (
-                        <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-2 border-white border-t-transparent" />
-                      ) : (
-                        <span className="text-white font-bold text-sm">4</span>
-                      )}
-                    </div>
-                    <p className="text-xs sm:text-sm font-semibold text-gray-800">Preparing</p>
-                    <p className="text-xs text-gray-600 hidden sm:block">Results</p>
-                  </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs sm:text-sm font-medium text-gray-700">
-                    <span>
-                      {currentStep === 'fetching' ? 'Fetching privacy policy...' :
-                       currentStep === 'reading' ? 'Reading and parsing content...' :
-                       currentStep === 'analyzing' ? 'AI analyzing privacy practices...' :
-                       currentStep === 'preparing' ? 'Preparing results...' :
-                       currentStep === 'complete' ? 'Analysis complete!' : 'Starting...'}
-                    </span>
-                    <span className="font-bold">
-                      {currentStep === 'fetching' ? '25%' :
-                       currentStep === 'reading' ? '50%' :
-                       currentStep === 'analyzing' ? '75%' :
-                       currentStep === 'preparing' ? '90%' :
-                       currentStep === 'complete' ? '100%' : '0%'}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out"
-                      style={{
-                        width: currentStep === 'fetching' ? '25%' :
-                               currentStep === 'reading' ? '50%' :
-                               currentStep === 'analyzing' ? '75%' :
-                               currentStep === 'preparing' ? '90%' :
-                               currentStep === 'complete' ? '100%' : '0%'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="py-12">
+          <div className="w-full bg-gray-100 rounded-full h-1.5 mb-4">
+            <div
+              className="h-full bg-gray-900 rounded-full transition-all duration-700"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <p className="text-sm text-gray-500 text-center">
+            Analyzing privacy policy...
+          </p>
+        </div>
       )}
 
       {/* Results */}
       {result && (
-        <div className="space-y-6">
-          {/* Overall Score Dashboard */}
-          <Card className="bg-gradient-to-br from-blue-50 via-white to-purple-50 border-2 border-blue-100 shadow-lg">
-            <CardContent className="p-4 sm:p-6">
-              {/* Header */}
-              <div className="mb-6">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">Privacy Analysis Results</h3>
-                    <div className="flex items-center gap-2 text-xs sm:text-sm">
-                      <span className="text-gray-600">Analysis for</span>
-                      <a
-                        href={result.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline flex items-center gap-1 font-semibold truncate"
-                      >
-                        <span className="truncate">{new URL(result.url).hostname}</span>
-                        <ExternalLink className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Home button */}
-                  <Button
-                    onClick={() => window.location.href = '/'}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center gap-1.5 text-sm hover:bg-blue-50 border-blue-200 flex-shrink-0"
-                  >
-                    <Home className="h-3.5 w-3.5" />
-                    <span className="hidden lg:inline">Home</span>
-                  </Button>
-                </div>
+        <div className="space-y-8">
+          {/* Score Header: Doughnut Gauge + Grade + Risk */}
+          <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-gray-100">
+            <ScoreGauge score={result.analysis.overall_score} />
+            <div className="flex-1 text-center sm:text-left">
+              <a
+                href={result.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-gray-500 hover:text-gray-700 inline-flex items-center gap-1 mb-3"
+              >
+                {new URL(result.url).hostname}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+              <div className="flex items-center gap-3 justify-center sm:justify-start">
+                <Badge className={`text-2xl px-4 py-2 font-bold ${getGradeColor(result.analysis.privacy_grade)}`}>
+                  {result.analysis.privacy_grade}
+                </Badge>
+                <Badge variant="outline" className={`text-xs border ${getRiskColor(result.analysis.risk_level)}`}>
+                  {result.analysis.risk_level.replace('-', ' ')} RISK
+                </Badge>
               </div>
-
-              {/* Main Score Visualization */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-4">
-                {/* Circular Progress */}
-                <div className="flex flex-col items-center justify-center py-2">
-                  <div className="relative w-[140px] h-[140px]">
-                    <CircularProgress
-                      value={result.analysis.overall_score * 10}
-                      size={140}
-                      strokeWidth={10}
-                      showValue={false}
-                    />
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <div className={`text-4xl font-extrabold ${getScoreColor(result.analysis.overall_score)}`}>
-                        {result.analysis.overall_score.toFixed(1)}
-                      </div>
-                      <div className="text-xs text-gray-500 font-medium">/ 10</div>
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-700 mt-2 font-semibold">Overall Score</div>
-                </div>
-
-                {/* Category Breakdown Mini Chart */}
-                <div className="flex flex-col items-center justify-center py-2 px-2">
-                  <div className="w-full">
-                    <div className="text-xs text-gray-700 font-bold mb-2 text-center">Category Scores</div>
-                    <div className="space-y-1.5">
-                      {Object.entries(result.analysis.categories).slice(0, 6).map(([key, category]) => {
-                        const categoryNames: Record<string, string> = {
-                          'data_collection': 'Data Minimization & Collection',
-                          'data_sharing': 'Third-Party Data Sharing',
-                          'user_rights': 'Individual Rights & Controls',
-                          'security_measures': 'Security & Risk Management',
-                          'compliance_framework': 'Regulatory Compliance',
-                          'transparency': 'Transparency & Communication'
-                        };
-
-                        return (
-                          <div key={key} className="flex items-center gap-1.5">
-                            <div className="text-xs text-gray-600 w-24 truncate text-right font-medium">
-                              {categoryNames[key] || key}
-                            </div>
-                            <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-all ${
-                                  category.score >= 8 ? 'bg-gradient-to-r from-green-500 to-green-600' :
-                                  category.score >= 6 ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
-                                  category.score >= 4 ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
-                                  'bg-gradient-to-r from-red-500 to-red-600'
-                                }`}
-                                style={{ width: `${category.score * 10}%` }}
-                              />
-                            </div>
-                            <div className={`text-xs font-bold w-7 text-right ${getScoreColor(category.score)}`}>
-                              {category.score.toFixed(1)}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Grade and Risk Level */}
-                <div className="flex flex-col items-center justify-center space-y-3 py-2">
-                  <div className="text-center">
-                    <Badge className={`text-4xl px-8 py-4 font-black rounded-xl shadow-md ${getGradeColor(result.analysis.privacy_grade)}`}>
-                      {result.analysis.privacy_grade}
-                    </Badge>
-                    <div className="text-xs text-gray-600 mt-2 font-semibold">Privacy Grade</div>
-                  </div>
-
-                  <div className="text-center">
-                    <Badge className={`px-4 py-1.5 text-sm font-bold border-2 rounded-lg shadow-sm ${getRiskLevelColor(result.analysis.risk_level)}`}>
-                      {result.analysis.risk_level.replace('-', ' ')} RISK
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Website Screenshot Thumbnail */}
-                <div className="flex flex-col items-center justify-center py-2 col-span-2 lg:col-span-1">
-                  <WebsiteScreenshot
-                    screenshotUrl={result.homepage_screenshot || ''}
-                    homepageUrl={result.homepage_url || `https://${new URL(result.url).hostname}`}
-                    domain={new URL(result.url).hostname}
-                    compact={true}
-                  />
-                </div>
-              </div>
-              
-              {/* Executive Summary */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-5 mb-4 border border-blue-100 shadow-sm">
-                <h4 className="text-base font-bold mb-2 flex items-center gap-2 text-gray-800">
-                  <FileText className="h-4 w-4 text-blue-600" />
-                  Executive Summary
-                </h4>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {result.analysis.executive_summary}
-                </p>
-              </div>
-
-              {/* Compliance Status - DPDP Act 2023 */}
-              <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl p-4 border-2 border-orange-200 shadow-md">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-orange-100 rounded-full p-2">
-                      <FileText className="h-5 w-5 text-orange-600" />
-                    </div>
-                    <div>
-                      <span className="font-bold text-sm text-gray-600">India DPDP Act 2023 Compliance</span>
-                      <p className="text-xs text-gray-500">Digital Personal Data Protection Act</p>
-                    </div>
-                  </div>
-                  <Badge className={`px-4 py-2 text-sm font-bold ${getComplianceColor(result.analysis.regulatory_compliance.dpdp_act_compliance || 'NOT_APPLICABLE')}`}>
-                    {(result.analysis.regulatory_compliance.dpdp_act_compliance || 'N/A').replace('_', ' ')}
-                  </Badge>
-                </div>
-                <p className="text-xs text-gray-500 mt-2 italic">
-                  Note: Compliance assessment is indicative. Act not yet fully enforced.
-                </p>
-                {result.analysis.regulatory_compliance.major_violations && result.analysis.regulatory_compliance.major_violations.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-orange-200">
-                    <p className="text-xs font-semibold text-orange-800 mb-1">Major Violations:</p>
-                    <ul className="space-y-1">
-                      {result.analysis.regulatory_compliance.major_violations.slice(0, 3).map((violation, index) => (
-                        <li key={index} className="text-xs text-orange-700 flex items-start gap-2">
-                          <span className="text-orange-500 mt-0.5">•</span>
-                          <span>{violation}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Important Disclaimer - Prominent Position */}
-          <Card className="border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-3">
-                <div className="bg-amber-100 rounded-full p-3">
-                  <AlertCircle className="h-6 w-6 text-amber-600" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-black text-amber-900 mb-3 flex items-center gap-2">
-                    ⚠️ Important Disclaimer
-                  </h4>
-                  <div className="space-y-2 text-amber-900">
-                    <p className="text-base leading-relaxed">
-                      This analysis is provided for <strong className="font-bold">educational and awareness purposes only</strong>.
-                    </p>
-                    <p className="text-base leading-relaxed">
-                      The information presented should <strong className="font-bold">not be used as legal advice</strong> or for making legal decisions. Privacy laws and regulations are complex and vary by jurisdiction.
-                    </p>
-                    <p className="text-base leading-relaxed">
-                      For legal compliance matters, please consult with <strong className="font-bold">qualified legal professionals</strong> or privacy attorneys who can provide guidance specific to your situation and jurisdiction.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Category Scores Dashboard */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            {/* Score Cards Grid */}
-            <Card>
-              <CardContent className="p-6">
-                <h4 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                  <Eye className="h-6 w-6" />
-                  Category Analysis
-                </h4>
-                
-                <div className="grid gap-4">
-                  {Object.entries(result.analysis.categories).map(([key, category]) => {
-                    const categoryNames: Record<string, string> = {
-                      'data_collection': 'Data Minimization & Collection',
-                      'data_sharing': 'Third-Party Data Sharing',
-                      'user_rights': 'Individual Rights & Controls',
-                      'security_measures': 'Security & Risk Management',
-                      'compliance_framework': 'Regulatory Compliance',
-                      'transparency': 'Transparency & Communication'
-                    };
-
-                    const getIcon = (categoryKey: string) => {
-                      switch (categoryKey) {
-                        case 'data_collection': return <Shield className="h-5 w-5" />;
-                        case 'data_sharing': return <Users className="h-5 w-5" />;
-                        case 'user_rights': return <Scale className="h-5 w-5" />;
-                        case 'security_measures': return <Lock className="h-5 w-5" />;
-                        case 'compliance_framework': return <FileText className="h-5 w-5" />;
-                        case 'transparency': return <Eye className="h-5 w-5" />;
-                        default: return <Shield className="h-5 w-5" />;
-                      }
-                    };
-
-                    return (
-                      <ScoreCard
-                        key={key}
-                        title={categoryNames[key] || key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        score={category.score}
-                        description={category.reasoning}
-                        icon={getIcon(key)}
-                        className="hover:shadow-md transition-all duration-200"
-                      />
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Heatmap Visualization */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="space-y-6">
-                  <Heatmap
-                    data={Object.entries(result.analysis.categories).map(([key, category]) => {
-                      const categoryNames: Record<string, string> = {
-                        'data_collection': 'Data Minimization & Collection',
-                        'data_sharing': 'Third-Party Data Sharing',
-                        'user_rights': 'Individual Rights & Controls',
-                        'security_measures': 'Security & Risk Management',
-                        'compliance_framework': 'Regulatory Compliance',
-                        'transparency': 'Transparency & Communication'
-                      };
-
-                      const weights: Record<string, number> = {
-                        'data_collection': 30,
-                        'data_sharing': 25,
-                        'user_rights': 20,
-                        'security_measures': 15,
-                        'compliance_framework': 7,
-                        'transparency': 3
-                      };
-
-                      return {
-                        label: categoryNames[key] || key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                        value: category.score,
-                        weight: weights[key] || 10
-                      };
-                    })}
-                  />
-                  
-                  {/* DPDP Act Compliance Notes */}
-                  <div className="space-y-3">
-                    <h5 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-orange-600" />
-                      DPDP Act 2023 Compliance Notes
-                    </h5>
-                    {Object.entries(result.analysis.categories).map(([key, category]) => {
-                      const categoryNames: Record<string, string> = {
-                        'data_collection': 'Data Minimization & Collection',
-                        'data_sharing': 'Third-Party Data Sharing',
-                        'user_rights': 'Individual Rights & Controls',
-                        'security_measures': 'Security & Risk Management',
-                        'compliance_framework': 'Regulatory Compliance',
-                        'transparency': 'Transparency & Communication'
-                      };
-
-                      return (
-                        category.dpdp_notes && (
-                          <div key={key} className="bg-orange-50 border-l-4 border-orange-200 p-3 rounded">
-                            <p className="text-sm text-orange-800">
-                              <strong>{categoryNames[key] || key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> {category.dpdp_notes}
-                            </p>
-                          </div>
-                        )
-                      );
-                    })}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            </div>
           </div>
 
-          {/* Critical Findings */}
-          {result.analysis.critical_findings && (
-            <Card className="border-red-200 bg-red-50">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertCircle className="h-6 w-6 text-red-600" />
-                  <h4 className="text-lg font-semibold text-red-800">Critical Findings</h4>
-                </div>
-                
-                <div className="grid md:grid-cols-3 gap-6">
-                  {/* High Risk Practices */}
-                  {result.analysis.critical_findings.high_risk_practices?.length > 0 && (
-                    <div>
-                      <h5 className="font-medium text-red-700 mb-2">High Risk Practices</h5>
-                      <ul className="space-y-2">
-                        {result.analysis.critical_findings.high_risk_practices.map((practice, index) => (
-                          <li key={index} className="text-sm text-red-600 flex items-start gap-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0" />
-                            {practice}
-                          </li>
-                        ))}
-                      </ul>
+          {/* DPDP Compliance Gauge */}
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-gray-900">DPDP Act 2023 Compliance</span>
+            </div>
+            <ComplianceGauge status={result.analysis.regulatory_compliance.dpdp_act_compliance} />
+          </div>
+
+          {/* Executive Summary */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">Summary</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">{result.analysis.executive_summary}</p>
+          </div>
+
+          {/* Charts Row: Radar + Bar */}
+          <div className="grid sm:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Category Overview</h3>
+              <CategoryRadar categories={result.analysis.categories} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Score Breakdown</h3>
+              <CategoryBarChart categories={result.analysis.categories} />
+            </div>
+          </div>
+
+          {/* Category Details (text) */}
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Category Details</h3>
+            <div className="space-y-3">
+              {CATEGORY_ORDER.map(key => {
+                const category = result.analysis.categories[key];
+                const meta = CATEGORY_META[key];
+                if (!category || !meta) return null;
+                const color = getScoreColor(category.score);
+                return (
+                  <div key={key} className="flex gap-3 p-3 rounded-lg bg-gray-50">
+                    <div className="flex-shrink-0 mt-0.5 text-gray-400">{meta.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-medium text-gray-700">{meta.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-400">{meta.weight}% weight</span>
+                          <span className="text-sm font-bold" style={{ color }}>{category.score.toFixed(1)}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 leading-relaxed">{category.reasoning}</p>
                     </div>
-                  )}
-                  
-                  {/* Regulatory Gaps */}
-                  {result.analysis.critical_findings.regulatory_gaps?.length > 0 && (
-                    <div>
-                      <h5 className="font-medium text-red-700 mb-2">Regulatory Gaps</h5>
-                      <ul className="space-y-2">
-                        {result.analysis.critical_findings.regulatory_gaps.map((gap, index) => (
-                          <li key={index} className="text-sm text-red-600 flex items-start gap-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0" />
-                            {gap}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  
-                  {/* Data Subject Impacts */}
-                  {result.analysis.critical_findings.data_subject_impacts?.length > 0 && (
-                    <div>
-                      <h5 className="font-medium text-red-700 mb-2">User Impact</h5>
-                      <ul className="space-y-2">
-                        {result.analysis.critical_findings.data_subject_impacts.map((impact, index) => (
-                          <li key={index} className="text-sm text-red-600 flex items-start gap-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0" />
-                            {impact}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Critical Findings with Donut */}
+          {allFindings.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-red-700 mb-4">Critical Findings</h3>
+              <div className="flex flex-col sm:flex-row gap-6">
+                <FindingsDonut findings={findingsCounts} />
+                <ul className="flex-1 space-y-2">
+                  {allFindings.map((finding, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-red-600">
+                      <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-1.5 flex-shrink-0" />
+                      {finding}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           )}
 
           {/* Positive Practices */}
           {result.analysis.positive_practices?.length > 0 && (
-            <Card className="border-green-200 bg-green-50">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                  <h4 className="text-lg font-semibold text-green-800">Privacy-Protective Practices</h4>
-                </div>
-                <ul className="space-y-2">
-                  {result.analysis.positive_practices.map((practice, index) => (
-                    <li key={index} className="text-sm text-green-700 flex items-start gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5 flex-shrink-0" />
-                      {practice}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            <div>
+              <h3 className="text-sm font-semibold text-green-700 mb-3">Positive Practices</h3>
+              <ul className="space-y-2">
+                {result.analysis.positive_practices.map((practice, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-green-600">
+                    <CheckCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                    {practice}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
-          {/* Actionable Recommendations */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Search className="h-6 w-6 text-blue-600" />
-                <h4 className="text-lg font-semibold">Actionable Recommendations</h4>
-              </div>
-              
-              <div className="grid md:grid-cols-3 gap-6">
-                {/* Immediate Actions */}
-                {result.analysis.actionable_recommendations?.immediate_actions?.length > 0 && (
-                  <div className="border-l-4 border-red-400 pl-4">
-                    <h5 className="font-medium text-red-700 mb-3">🚨 Immediate Actions</h5>
-                    <ul className="space-y-2">
-                      {result.analysis.actionable_recommendations.immediate_actions.map((action, index) => (
-                        <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full mt-2 flex-shrink-0" />
-                          {action}
-                        </li>
+          {/* Recommendations */}
+          {result.analysis.actionable_recommendations && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">Recommendations</h3>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {result.analysis.actionable_recommendations.immediate_actions?.length > 0 && (
+                  <div className="p-4 bg-red-50 rounded-lg border border-red-100">
+                    <h4 className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-2">Immediate</h4>
+                    <ul className="space-y-1.5">
+                      {result.analysis.actionable_recommendations.immediate_actions.map((a, i) => (
+                        <li key={i} className="text-xs text-gray-700">&bull; {a}</li>
                       ))}
                     </ul>
                   </div>
                 )}
-                
-                {/* Medium Term */}
-                {result.analysis.actionable_recommendations?.medium_term_improvements?.length > 0 && (
-                  <div className="border-l-4 border-yellow-400 pl-4">
-                    <h5 className="font-medium text-yellow-700 mb-3">⏳ Medium Term</h5>
-                    <ul className="space-y-2">
-                      {result.analysis.actionable_recommendations.medium_term_improvements.map((improvement, index) => (
-                        <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                          <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full mt-2 flex-shrink-0" />
-                          {improvement}
-                        </li>
+                {result.analysis.actionable_recommendations.medium_term_improvements?.length > 0 && (
+                  <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
+                    <h4 className="text-xs font-semibold text-yellow-600 uppercase tracking-wide mb-2">Medium Term</h4>
+                    <ul className="space-y-1.5">
+                      {result.analysis.actionable_recommendations.medium_term_improvements.map((a, i) => (
+                        <li key={i} className="text-xs text-gray-700">&bull; {a}</li>
                       ))}
                     </ul>
                   </div>
                 )}
-                
-                {/* Best Practices */}
-                {result.analysis.actionable_recommendations?.best_practice_adoption?.length > 0 && (
-                  <div className="border-l-4 border-blue-400 pl-4">
-                    <h5 className="font-medium text-blue-700 mb-3">✨ Best Practices</h5>
-                    <ul className="space-y-2">
-                      {result.analysis.actionable_recommendations.best_practice_adoption.map((practice, index) => (
-                        <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-                          {practice}
-                        </li>
+                {result.analysis.actionable_recommendations.best_practice_adoption?.length > 0 && (
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">Best Practices</h4>
+                    <ul className="space-y-1.5">
+                      {result.analysis.actionable_recommendations.best_practice_adoption.map((a, i) => (
+                        <li key={i} className="text-xs text-gray-700">&bull; {a}</li>
                       ))}
                     </ul>
                   </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          )}
 
-          {/* Share Results */}
-          <ShareButtons
-            url={result.url}
-            privacyGrade={result.analysis.privacy_grade}
-            overallScore={result.analysis.overall_score}
-            pageType="analysis"
-          />
-
-          {/* Methodology Section */}
-          <MethodologySection />
-
-          {/* For Website Owners - Link to Dedicated Page */}
-          <Card className="border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-100 rounded-full p-3">
-                  <MessageSquare className="h-6 w-6 text-blue-600" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-black text-blue-900 mb-3">
-                    For Website Owners & Organizations
-                  </h4>
-                  <p className="text-base text-blue-800 leading-relaxed mb-4">
-                    If you are the owner, webmaster, or part of the team behind <strong>{new URL(result.url).hostname}</strong>, we welcome collaboration, feedback, and corrections.
-                  </p>
-                  <Button
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold"
-                    asChild
-                  >
-                    <Link href="/for-website-owners">
-                      Learn More & Contact Us →
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Analysis Metadata */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>
-                  Analysis completed on {new Date(result.timestamp).toLocaleString()}
-                </span>
-                <Badge variant="outline">
-                  AI-Powered Analysis
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Disclaimer */}
+          <p className="text-xs text-gray-400 pt-4 border-t border-gray-100">
+            This analysis is for educational purposes only and should not be used as legal advice. Consult qualified legal professionals for compliance matters.
+          </p>
         </div>
       )}
     </div>

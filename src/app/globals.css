@@ -1,8 +1,3 @@
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
-
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -83,7 +78,6 @@
   
   html {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    scroll-behavior: auto !important; /* Disable native smooth scrolling for Lenis */
     overflow-x: hidden;
     max-width: 100vw;
   }
@@ -94,7 +88,6 @@
     line-height: 1.6;
     overflow-x: hidden;
     max-width: 100vw;
-    overflow-x: hidden;
   }
   
   /* Typography hierarchy */
@@ -183,10 +176,6 @@
     word-wrap: break-word;
   }
   
-  /* Responsive spacing adjustments */
-  .mt-12 { margin-top: 2rem; }
-  .mb-8 { margin-bottom: 1.5rem; }
-  .p-6 { padding: 1rem; }
 }
 
 /* Animation classes */
@@ -227,7 +216,3 @@
 .overflow-hidden { overflow: hidden; }
 .overflow-x-auto { -webkit-overflow-scrolling: touch; }
 
-/* Disable native scroll behavior when using Lenis */
-*, *::before, *::after {
-  scroll-behavior: auto !important;
-}

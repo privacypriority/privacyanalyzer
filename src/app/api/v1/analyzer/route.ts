@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { OpenRouter } from '@openrouter/sdk';
 import FirecrawlApp from '@mendable/firecrawl-js';
 import { validateUrl } from '@/lib/input-validation';
 import { hasNodeJSRuntime } from '@/lib/platform-detector';
 
-// Runtime configuration - Node.js for Playwright support and longer timeouts
+// Runtime configuration for Cloudflare Workers via OpenNext
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-// Initialize OpenAI client
-function getOpenAIClient() {
-  return new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
+// Initialize OpenRouter client
+function getOpenRouterClient() {
+  return new OpenRouter({
     apiKey: process.env.OPENROUTER_API,
   });
 }
@@ -25,14 +24,58 @@ function getFirecrawlClient() {
   return new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY });
 }
 
+// Clean raw HTML into readable text
+function htmlToText(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, '')
+    .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, '')
+    .replace(/<\/(p|div|h[1-6]|li|tr|br|blockquote|section|article)>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#\d+;/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n/g, '\n')
+    .trim();
+}
+
+// Truncate content at a sentence boundary near the limit
+function smartTruncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  const truncated = text.substring(0, maxLength);
+  const lastPeriod = truncated.lastIndexOf('. ');
+  const lastNewline = truncated.lastIndexOf('\n');
+  const cutPoint = Math.max(lastPeriod, lastNewline);
+  if (cutPoint > maxLength * 0.7) {
+    return truncated.substring(0, cutPoint + 1);
+  }
+  return truncated;
+}
+
 // Simple fetch fallback
 async function scrapeWithFetch(url: string): Promise<string> {
   try {
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; PrivacyHubBot/1.0; +https://privacyhub.com)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1',
       },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
@@ -40,14 +83,7 @@ async function scrapeWithFetch(url: string): Promise<string> {
     }
 
     const html = await response.text();
-    const textContent = html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    return textContent;
+    return htmlToText(html);
   } catch (error) {
     console.error('Fetch scraping failed:', error);
     throw error;
@@ -57,7 +93,6 @@ async function scrapeWithFetch(url: string): Promise<string> {
 // Crawlee PlaywrightCrawler fallback
 // Only available in Node.js runtime, not in Edge Runtime
 async function scrapeWithCrawlee(url: string): Promise<string> {
-  // Check if we're running in Node.js environment with Playwright support
   if (!hasNodeJSRuntime()) {
     throw new Error('Playwright is not available in Edge Runtime. Use Firecrawl or fetch fallback instead.');
   }
@@ -65,12 +100,27 @@ async function scrapeWithCrawlee(url: string): Promise<string> {
   let extractedContent = '';
 
   try {
-    // Dynamic import of Playwright to avoid loading in Edge Runtime
     const { PlaywrightCrawler } = await import('@crawlee/playwright');
 
     const crawler = new PlaywrightCrawler({
       maxRequestsPerCrawl: 1,
       headless: true,
+      navigationTimeoutSecs: 30,
+      maxRequestRetries: 2,
+      requestHandlerTimeoutSecs: 60,
+
+      browserPoolOptions: {
+        useFingerprints: true,
+        fingerprintOptions: {
+          fingerprintGeneratorOptions: {
+            browsers: [{ name: 'chrome' as const, minVersion: 120 }],
+            devices: ['desktop' as const],
+            operatingSystems: ['windows' as const],
+            locales: ['en-US', 'en'],
+          },
+        },
+      },
+
       launchContext: {
         launchOptions: {
           args: [
@@ -81,20 +131,37 @@ async function scrapeWithCrawlee(url: string): Promise<string> {
           ],
         },
       },
-      async requestHandler({ page, request }) {
-        console.log(`Crawling: ${request.url}`);
-        await page.waitForLoadState('domcontentloaded');
-        await page.waitForTimeout(2000);
+
+      sessionPoolOptions: {
+        maxPoolSize: 1,
+        sessionOptions: { maxUsageCount: 1 },
+      },
+
+      postNavigationHooks: [
+        async ({ page, log }) => {
+          try {
+            await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
+            await page.waitForTimeout(2000);
+          } catch {
+            log.warning('Timeout waiting for page load state, proceeding anyway');
+          }
+        },
+      ],
+
+      async requestHandler({ page, log }) {
+        log.info(`Extracting content from: ${url}`);
 
         extractedContent = await page.evaluate(() => {
-          const elementsToRemove = document.querySelectorAll('script, style, nav, header, footer, aside, [role="navigation"], [role="banner"], [role="complementary"]');
+          const elementsToRemove = document.querySelectorAll(
+            'script, style, noscript, svg, nav, header, footer, aside, [role="navigation"], [role="banner"], [role="complementary"], .advertisement, .ads'
+          );
           elementsToRemove.forEach(el => el.remove());
 
           const selectors = [
             'main', '[role="main"]', '.main-content', '#main-content',
             '.content', '#content', '.privacy-policy', '.policy-content',
             'article', '.article-content', '.post-content', '.entry-content',
-            '.container', 'body'
+            '.page-content', '.container', 'body'
           ];
 
           for (const selector of selectors) {
@@ -106,9 +173,13 @@ async function scrapeWithCrawlee(url: string): Promise<string> {
 
           return document.body.textContent?.trim() || '';
         });
+
+        log.info(`Content extracted, length: ${extractedContent.length}`);
       },
-      failedRequestHandler({ request }) {
-        console.error(`Request ${request.url} failed multiple times`);
+
+      failedRequestHandler({ request, log }, error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        log.error(`Request ${request.url} failed: ${errorMsg}`);
       },
     });
 
@@ -386,21 +457,24 @@ export async function POST(request: NextRequest) {
     console.log('[API v1] Analyzing with AI...');
 
     // Analyze with AI
-    const openai = getOpenAIClient();
-    const completion = await openai.chat.completions.create({
-      model: "deepseek/deepseek-chat",
-      messages: [
-        {
-          role: "system",
-          content: PRIVACY_ANALYSIS_PROMPT
-        },
-        {
-          role: "user",
-          content: `Analyze this privacy policy:\n\n${content.substring(0, 16000)}`
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 2000,
+    const openrouter = getOpenRouterClient();
+    const completion = await openrouter.chat.send({
+      chatGenerationParams: {
+        model: "openrouter/free",
+        messages: [
+          {
+            role: "system",
+            content: PRIVACY_ANALYSIS_PROMPT
+          },
+          {
+            role: "user",
+            content: `Analyze this privacy policy:\n\n${smartTruncate(content, 16000)}`
+          }
+        ],
+        temperature: 0.3,
+        maxTokens: 2000,
+        stream: false,
+      },
     });
 
     const analysisText = completion.choices[0]?.message?.content;
@@ -419,6 +493,69 @@ export async function POST(request: NextRequest) {
       console.error('[API v1] Failed to parse AI response:', parseError);
       throw new Error('Failed to parse analysis results');
     }
+
+    // --- Server-side scoring validation ---
+    // Define category weights (must match the prompt)
+    const CATEGORY_WEIGHTS: Record<string, number> = {
+      data_collection: 30,
+      data_sharing: 25,
+      user_rights: 20,
+      security_measures: 15,
+      compliance_framework: 7,
+      transparency: 3,
+    };
+
+    // Clamp each category score to 1-10 range
+    if (analysis.categories && typeof analysis.categories === 'object') {
+      for (const key of Object.keys(analysis.categories)) {
+        const cat = analysis.categories[key];
+        if (cat && typeof cat.score === 'number') {
+          cat.score = Math.round(Math.min(10, Math.max(1, cat.score)) * 10) / 10;
+        }
+      }
+    }
+
+    // Recalculate overall_score as the true weighted average
+    let weightedSum = 0;
+    let totalWeight = 0;
+    for (const [key, weight] of Object.entries(CATEGORY_WEIGHTS)) {
+      const cat = analysis.categories?.[key];
+      if (cat && typeof cat.score === 'number') {
+        weightedSum += cat.score * weight;
+        totalWeight += weight;
+      }
+    }
+    if (totalWeight > 0) {
+      analysis.overall_score = Math.round((weightedSum / totalWeight) * 10) / 10;
+    }
+
+    // Derive risk_level deterministically from overall_score
+    if (analysis.overall_score >= 9) {
+      analysis.risk_level = 'EXEMPLARY';
+    } else if (analysis.overall_score >= 7) {
+      analysis.risk_level = 'LOW';
+    } else if (analysis.overall_score >= 5) {
+      analysis.risk_level = 'MODERATE';
+    } else if (analysis.overall_score >= 3) {
+      analysis.risk_level = 'MODERATE-HIGH';
+    } else {
+      analysis.risk_level = 'HIGH';
+    }
+
+    // Derive privacy_grade deterministically from overall_score
+    if (analysis.overall_score >= 9.5) analysis.privacy_grade = 'A+';
+    else if (analysis.overall_score >= 9) analysis.privacy_grade = 'A';
+    else if (analysis.overall_score >= 8.5) analysis.privacy_grade = 'A-';
+    else if (analysis.overall_score >= 8) analysis.privacy_grade = 'B+';
+    else if (analysis.overall_score >= 7.5) analysis.privacy_grade = 'B';
+    else if (analysis.overall_score >= 7) analysis.privacy_grade = 'B-';
+    else if (analysis.overall_score >= 6.5) analysis.privacy_grade = 'C+';
+    else if (analysis.overall_score >= 6) analysis.privacy_grade = 'C';
+    else if (analysis.overall_score >= 5.5) analysis.privacy_grade = 'C-';
+    else if (analysis.overall_score >= 5) analysis.privacy_grade = 'D+';
+    else if (analysis.overall_score >= 4.5) analysis.privacy_grade = 'D';
+    else if (analysis.overall_score >= 4) analysis.privacy_grade = 'D-';
+    else analysis.privacy_grade = 'F';
 
     console.log('[API v1] Analysis complete');
 
