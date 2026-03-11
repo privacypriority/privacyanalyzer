@@ -1,8 +1,3 @@
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
-
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -37,39 +32,39 @@
 /* Professional Black & White Theme - Light Mode Only */
 :root {
   --radius: 0.5rem;
-  
+
   /* Pure black and white foundation */
   --background: #ffffff;
   --foreground: #000000;
-  
+
   /* Card and surfaces */
   --card: #ffffff;
   --card-foreground: #000000;
   --popover: #ffffff;
   --popover-foreground: #000000;
-  
+
   /* Primary colors - black/white system */
   --primary: #000000;
   --primary-foreground: #ffffff;
-  
+
   /* Secondary grays */
   --secondary: #f8f9fa;
   --secondary-foreground: #495057;
-  
+
   /* Muted colors */
   --muted: #f8f9fa;
   --muted-foreground: #6c757d;
-  
+
   /* Accent colors */
   --accent: #e9ecef;
   --accent-foreground: #000000;
-  
+
   /* Status colors - minimal */
   --destructive: #dc3545;
   --success: #28a745;
   --warning: #ffc107;
   --info: #17a2b8;
-  
+
   /* Borders and inputs */
   --border: #e9ecef;
   --input: #e9ecef;
@@ -80,30 +75,29 @@
   * {
     @apply border-border;
   }
-  
+
   html {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    scroll-behavior: auto !important; /* Disable native smooth scrolling for Lenis */
+    scroll-behavior: smooth;
     overflow-x: hidden;
     max-width: 100vw;
   }
-  
+
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     line-height: 1.6;
     overflow-x: hidden;
     max-width: 100vw;
-    overflow-x: hidden;
   }
-  
+
   /* Typography hierarchy */
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Poppins', system-ui, sans-serif;
     @apply text-foreground font-semibold;
     line-height: 1.3;
   }
-  
+
   h1 { @apply text-4xl lg:text-5xl font-bold; }
   h2 { @apply text-3xl lg:text-4xl font-bold; }
   h3 { @apply text-2xl lg:text-3xl font-semibold; }
@@ -117,76 +111,48 @@
   .glass-button {
     @apply bg-primary hover:bg-gray-800 text-primary-foreground rounded-lg transition-all duration-200 shadow-sm hover:shadow-md font-medium;
   }
-  
+
   .button-secondary {
     @apply bg-secondary border border-border hover:bg-gray-50 text-secondary-foreground rounded-lg transition-all duration-200 shadow-sm hover:shadow-md font-medium;
   }
-  
+
   /* Input styling */
   .neo-input {
     @apply bg-background border border-input focus:border-ring rounded-lg shadow-sm focus:shadow-md transition-all duration-200 text-foreground placeholder-muted-foreground;
   }
-  
+
   /* Professional headings */
   .gradient-text {
     @apply text-foreground font-display font-bold;
   }
-  
+
   /* Status indicators */
   .status-success {
     @apply text-green-700 bg-green-50 border-green-200;
   }
-  
+
   .status-warning {
     @apply text-amber-700 bg-amber-50 border-amber-200;
   }
-  
+
   .status-danger {
     @apply text-red-700 bg-red-50 border-red-200;
   }
-  
+
   /* Professional links */
   .link {
     @apply text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors duration-200;
   }
-  
+
   /* Muted text */
   .text-muted {
     @apply text-muted-foreground;
   }
-  
+
   /* Section dividers */
   .section-divider {
     @apply border-t border-border my-8;
   }
-}
-
-/* Mobile optimizations */
-@media (max-width: 640px) {
-  h1, h2, h3 {
-    @apply text-center sm:text-left;
-  }
-  
-  .neo-input {
-    @apply text-sm py-2;
-  }
-  
-  .glass-button {
-    @apply text-sm py-2 px-4;
-  }
-  
-  /* Fix for mobile overflow */
-  pre {
-    overflow-x: auto;
-    max-width: 100%;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
-  
-  /* Responsive spacing adjustments */
-  .mt-12 { margin-top: 2rem; }
-  .mb-8 { margin-bottom: 1.5rem; }
-  .p-6 { padding: 1rem; }
 }
 
 /* Animation classes */
@@ -209,25 +175,5 @@
   display: none;
 }
 
-/* Text utilities */
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
-}
-
-.break-all {
-  word-break: break-all;
-  max-width: 100%;
-  display: inline-block;
-}
-
 /* Overflow handling */
-.overflow-hidden { overflow: hidden; }
 .overflow-x-auto { -webkit-overflow-scrolling: touch; }
-
-/* Disable native scroll behavior when using Lenis */
-*, *::before, *::after {
-  scroll-behavior: auto !important;
-}

@@ -1,19 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { OpenRouter } from '@openrouter/sdk';
 import FirecrawlApp from '@mendable/firecrawl-js';
 import { validateUrl } from '@/lib/input-validation';
 import { hasNodeJSRuntime } from '@/lib/platform-detector';
+
+// Convert raw HTML to plain text
+function htmlToText(html: string): string {
+  let text = html;
+  // Remove script, style, noscript, svg, iframe tags and their content
+  text = text.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  text = text.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+  text = text.replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, '');
+  text = text.replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, '');
+  text = text.replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
+  // Add newlines after block elements
+  text = text.replace(/<\/(?:p|div|h[1-6]|li|tr)>/gi, '\n');
+  text = text.replace(/<br\s*\/?>/gi, '\n');
+  // Strip remaining HTML tags
+  text = text.replace(/<[^>]+>/g, ' ');
+  // Decode HTML entities
+  text = text.replace(/&amp;/g, '&');
+  text = text.replace(/&lt;/g, '<');
+  text = text.replace(/&gt;/g, '>');
+  text = text.replace(/&quot;/g, '"');
+  text = text.replace(/&#39;/g, "'");
+  text = text.replace(/&nbsp;/g, ' ');
+  text = text.replace(/&#x27;/g, "'");
+  text = text.replace(/&#x2F;/g, '/');
+  text = text.replace(/&#(\d+);/g, (_match, dec) => String.fromCharCode(Number(dec)));
+  // Collapse whitespace and newlines
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
+}
+
+// Truncate content at a natural boundary instead of hard cut
+function smartTruncate(content: string, maxLength: number): string {
+  if (content.length <= maxLength) return content;
+
+  const searchStart = maxLength - 500;
+  const region = content.substring(Math.max(0, searchStart), maxLength);
+
+  // Try to find last sentence boundary
+  const sentenceMatch = region.match(/.*[.?!][\s\n]/);
+  if (sentenceMatch) {
+    return content.substring(0, Math.max(0, searchStart) + sentenceMatch[0].length).trim();
+  }
+
+  // Try paragraph boundary
+  const paraIndex = region.lastIndexOf('\n\n');
+  if (paraIndex !== -1) {
+    return content.substring(0, Math.max(0, searchStart) + paraIndex).trim();
+  }
+
+  // Try last space
+  const spaceIndex = content.lastIndexOf(' ', maxLength);
+  if (spaceIndex > maxLength - 500) {
+    return content.substring(0, spaceIndex).trim();
+  }
+
+  // Hard fallback
+  return content.substring(0, maxLength);
+}
 
 // Runtime configuration - Node.js for Playwright support and longer timeouts
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-// Initialize OpenAI client
-function getOpenAIClient() {
-  return new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
+// Initialize OpenRouter client
+function getOpenRouterClient() {
+  return new OpenRouter({
     apiKey: process.env.OPENROUTER_API,
+    httpReferer: "https://privacyhub.in",
+    xTitle: "PrivacyHub - Privacy Policy Analyzer",
   });
 }
 
@@ -30,9 +90,11 @@ async function scrapeWithFetch(url: string): Promise<string> {
   try {
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; PrivacyHubBot/1.0; +https://privacyhub.com)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
       },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
@@ -40,12 +102,7 @@ async function scrapeWithFetch(url: string): Promise<string> {
     }
 
     const html = await response.text();
-    const textContent = html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const textContent = htmlToText(html);
 
     return textContent;
   } catch (error) {
@@ -71,6 +128,7 @@ async function scrapeWithCrawlee(url: string): Promise<string> {
     const crawler = new PlaywrightCrawler({
       maxRequestsPerCrawl: 1,
       headless: true,
+      navigationTimeoutSecs: 30,
       launchContext: {
         launchOptions: {
           args: [
@@ -81,13 +139,23 @@ async function scrapeWithCrawlee(url: string): Promise<string> {
           ],
         },
       },
+      browserPoolOptions: {
+        useFingerprints: true,
+        fingerprintOptions: {
+          fingerprintGeneratorOptions: {
+            browsers: [{ name: 'chrome', minVersion: 120 }],
+            devices: ['desktop'],
+            operatingSystems: ['windows'],
+          },
+        },
+      },
       async requestHandler({ page, request }) {
         console.log(`Crawling: ${request.url}`);
         await page.waitForLoadState('domcontentloaded');
         await page.waitForTimeout(2000);
 
         extractedContent = await page.evaluate(() => {
-          const elementsToRemove = document.querySelectorAll('script, style, nav, header, footer, aside, [role="navigation"], [role="banner"], [role="complementary"]');
+          const elementsToRemove = document.querySelectorAll('script, style, noscript, svg, iframe, nav, header, footer, aside, [role="navigation"], [role="banner"], [role="complementary"]');
           elementsToRemove.forEach(el => el.remove());
 
           const selectors = [
@@ -386,24 +454,27 @@ export async function POST(request: NextRequest) {
     console.log('[API v1] Analyzing with AI...');
 
     // Analyze with AI
-    const openai = getOpenAIClient();
-    const completion = await openai.chat.completions.create({
-      model: "deepseek/deepseek-chat",
-      messages: [
-        {
-          role: "system",
-          content: PRIVACY_ANALYSIS_PROMPT
-        },
-        {
-          role: "user",
-          content: `Analyze this privacy policy:\n\n${content.substring(0, 16000)}`
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 2000,
+    const openrouter = getOpenRouterClient();
+    const completion = await openrouter.chat.send({
+      chatGenerationParams: {
+        model: "openrouter/free",
+        messages: [
+          {
+            role: "system",
+            content: PRIVACY_ANALYSIS_PROMPT
+          },
+          {
+            role: "user",
+            content: `Analyze this privacy policy:\n\n${smartTruncate(content, 16000)}`
+          }
+        ],
+        temperature: 0.3,
+        maxTokens: 2000,
+        stream: false,
+      },
     });
 
-    const analysisText = completion.choices[0]?.message?.content;
+    const analysisText = completion.choices[0]?.message?.content as string | undefined;
 
     if (!analysisText) {
       throw new Error('No analysis generated');
@@ -419,6 +490,83 @@ export async function POST(request: NextRequest) {
       console.error('[API v1] Failed to parse AI response:', parseError);
       throw new Error('Failed to parse analysis results');
     }
+
+    // --- Server-side scoring validation ---
+    // 1. Clamp every category score to 1-10 range
+    const categoryKeys = ['data_collection', 'data_sharing', 'user_rights', 'security_measures', 'compliance_framework', 'transparency'] as const;
+    for (const key of categoryKeys) {
+      if (analysis.categories?.[key]?.score != null) {
+        analysis.categories[key].score = Math.max(1, Math.min(10, Math.round(analysis.categories[key].score * 10) / 10));
+      }
+    }
+
+    // 2. Recalculate overall_score as a proper weighted average
+    const weights: Record<string, number> = {
+      data_collection: 0.30,
+      data_sharing: 0.25,
+      user_rights: 0.20,
+      security_measures: 0.15,
+      compliance_framework: 0.07,
+      transparency: 0.03,
+    };
+    let weightedSum = 0;
+    let totalWeight = 0;
+    for (const key of categoryKeys) {
+      const score = analysis.categories?.[key]?.score;
+      if (score != null) {
+        weightedSum += score * weights[key];
+        totalWeight += weights[key];
+      }
+    }
+    if (totalWeight > 0) {
+      analysis.overall_score = Math.round((weightedSum / totalWeight) * 100) / 100;
+    }
+
+    // 3. Derive risk_level deterministically from recalculated score
+    const overallScore = analysis.overall_score;
+    if (overallScore >= 9) {
+      analysis.risk_level = 'EXEMPLARY';
+    } else if (overallScore >= 7) {
+      analysis.risk_level = 'LOW';
+    } else if (overallScore >= 5) {
+      analysis.risk_level = 'MODERATE';
+    } else if (overallScore >= 3) {
+      analysis.risk_level = 'MODERATE-HIGH';
+    } else {
+      analysis.risk_level = 'HIGH';
+    }
+
+    // 4. Derive privacy_grade deterministically from recalculated score
+    if (overallScore >= 9.5) {
+      analysis.privacy_grade = 'A+';
+    } else if (overallScore >= 9) {
+      analysis.privacy_grade = 'A';
+    } else if (overallScore >= 8.5) {
+      analysis.privacy_grade = 'A-';
+    } else if (overallScore >= 8) {
+      analysis.privacy_grade = 'B+';
+    } else if (overallScore >= 7.5) {
+      analysis.privacy_grade = 'B';
+    } else if (overallScore >= 7) {
+      analysis.privacy_grade = 'B-';
+    } else if (overallScore >= 6.5) {
+      analysis.privacy_grade = 'C+';
+    } else if (overallScore >= 6) {
+      analysis.privacy_grade = 'C';
+    } else if (overallScore >= 5.5) {
+      analysis.privacy_grade = 'C-';
+    } else if (overallScore >= 5) {
+      analysis.privacy_grade = 'D+';
+    } else if (overallScore >= 4.5) {
+      analysis.privacy_grade = 'D';
+    } else if (overallScore >= 4) {
+      analysis.privacy_grade = 'D-';
+    } else {
+      analysis.privacy_grade = 'F';
+    }
+
+    console.log(`[API v1] [Scoring] Validated scores - overall: ${analysis.overall_score}, grade: ${analysis.privacy_grade}, risk: ${analysis.risk_level}`);
+    // --- End scoring validation ---
 
     console.log('[API v1] Analysis complete');
 
