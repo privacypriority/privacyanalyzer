@@ -23,10 +23,7 @@ export function Header() {
 
   const navigation = [
     { name: 'Home', href: '/' },
-    { name: 'Digital Fingerprint', href: '/digital-fingerprint' },
     { name: 'Methodology', href: '/methodology' },
-    { name: 'For Website Owners', href: '/for-website-owners' },
-    { name: 'Support', href: '/support' },
     { name: 'About', href: '/about' },
   ];
 
@@ -37,10 +34,10 @@ export function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
                 <Shield className="h-6 w-6 text-white" />
               </div>
-              <div className="text-2xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-[family-name:var(--font-poppins)]">
+              <div className="text-xl font-bold text-gray-900">
                 PrivacyHub.in
               </div>
             </Link>
@@ -49,13 +46,13 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {navigation.map((item) => (
-              <a
+              <Link
                 key={item.name}
                 href={item.href}
-                className="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
+                className="text-gray-700 hover:text-gray-900 transition-colors duration-200 font-medium"
               >
                 {item.name}
-              </a>
+              </Link>
             ))}
 
             {/* Social Links */}
@@ -107,14 +104,14 @@ export function Header() {
           <div className="md:hidden py-4 border-t border-gray-200">
             <nav className="flex flex-col space-y-3">
               {navigation.map((item) => (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
-                  className="text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium py-2"
+                  className="text-gray-700 hover:text-gray-900 transition-colors duration-200 font-medium py-2"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
 
               <a

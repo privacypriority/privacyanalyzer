@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { OpenRouter } from '@openrouter/sdk';
 import FirecrawlApp from '@mendable/firecrawl-js';
 import { validateUrl } from '@/lib/input-validation';
 import { getBestAvailableKey, markKeyAsFailed } from '@/lib/openrouter-key-manager';
@@ -43,8 +43,8 @@ function getD1Database(): D1Database | undefined {
   return undefined;
 }
 
-// Initialize OpenAI client with best available API key
-async function getOpenAIClient(env?: Record<string, string | undefined> | { DB?: D1Database }) {
+// Initialize OpenRouter client with best available API key
+async function getOpenRouterClient(env?: Record<string, string | undefined> | { DB?: D1Database }) {
   // Extract only string environment variables for the key manager
   const envVars: Record<string, string | undefined> | undefined =
     env && typeof env === 'object' && !('DB' in env) ? env as Record<string, string | undefined> : undefined;
@@ -57,15 +57,8 @@ async function getOpenAIClient(env?: Record<string, string | undefined> | { DB?:
   console.log(`[OpenRouter] Using ${keyInfo.name} API key (daily rotation active)`);
 
   return {
-    client: new OpenAI({
-      baseURL: "https://openrouter.ai/api/v1",
+    client: new OpenRouter({
       apiKey: keyInfo.key,
-      defaultHeaders: {
-        "HTTP-Referer": "https://privacyhub.in",
-        "X-Title": "PrivacyHub - Privacy Policy Analyzer",
-        "X-Site-Url": "https://privacyhub.in",
-        "X-App-Name": "PrivacyHub",
-      },
     }),
     keyName: keyInfo.name,
   };
@@ -77,6 +70,55 @@ function getFirecrawlClient(apiKey: string) {
     throw new Error('FIRECRAWL_API_KEY is required');
   }
   return new FirecrawlApp({ apiKey });
+}
+
+// Clean raw HTML into readable text
+function htmlToText(html: string): string {
+  return html
+    // Remove script, style, noscript, and SVG blocks
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/<noscript\b[^<]*(?:(?!<\/noscript>)<[^<]*)*<\/noscript>/gi, '')
+    .replace(/<svg\b[^<]*(?:(?!<\/svg>)<[^<]*)*<\/svg>/gi, '')
+    // Add line breaks for block elements before stripping tags
+    .replace(/<\/(p|div|h[1-6]|li|tr|br|blockquote|section|article)>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    // Strip remaining tags
+    .replace(/<[^>]+>/g, ' ')
+    // Decode common HTML entities
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    .replace(/&copy;/g, '©')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    .replace(/&bull;/g, '•')
+    .replace(/&#\d+;/g, '') // Remove remaining numeric entities
+    // Collapse whitespace
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s*\n/g, '\n')
+    .trim();
+}
+
+// Truncate content at a sentence boundary near the limit
+function smartTruncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+
+  // Look for the last sentence boundary within the limit
+  const truncated = text.substring(0, maxLength);
+  const lastPeriod = truncated.lastIndexOf('. ');
+  const lastNewline = truncated.lastIndexOf('\n');
+  const cutPoint = Math.max(lastPeriod, lastNewline);
+
+  if (cutPoint > maxLength * 0.7) {
+    return truncated.substring(0, cutPoint + 1);
+  }
+  return truncated;
 }
 
 // Simple fetch fallback when Playwright is not available
@@ -105,16 +147,7 @@ async function scrapeWithFetch(url: string): Promise<string> {
     }
 
     const html = await response.text();
-
-    // Basic HTML parsing to extract text content
-    const textContent = html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    return textContent;
+    return htmlToText(html);
   } catch (error) {
     console.error('Fetch scraping failed:', error);
     throw error;
@@ -898,8 +931,7 @@ export async function POST(request: NextRequest) {
     console.log('Analyzing privacy policy with AI...');
     console.log('[Analysis] Starting analysis with automatic key rotation and fallback');
 
-    // Analyze with OpenRouter AI using free DeepSeek v3.1 model with fallback support
-    // Note: Reasoning tokens are automatically enabled for DeepSeek v3.1
+    // Analyze with OpenRouter AI using the openrouter/free model with fallback support
     let analysisText: string | null | undefined = null;
     let lastError: Error | null = null;
     const maxRetries = 3; // Try all available keys (up to 3) if needed
@@ -907,32 +939,35 @@ export async function POST(request: NextRequest) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       let currentKeyName = '';
       try {
-        const openaiResult = await getOpenAIClient(env);
-        if (!openaiResult) {
+        const openrouterResult = await getOpenRouterClient(env);
+        if (!openrouterResult) {
           throw new Error('No OpenRouter API keys available. Please configure OPENROUTER_API, OPENROUTER_API_1, or OPENROUTER_API_2 environment variables.');
         }
-        const { client: openai, keyName } = openaiResult;
+        const { client: openrouter, keyName } = openrouterResult;
         currentKeyName = keyName;
 
         console.log(`[Analysis] Using ${keyName} for AI analysis (attempt ${attempt + 1}/${maxRetries})`);
-        console.log(`[OpenRouter] Sending request to model: deepseek/deepseek-chat-v3.1:free`);
+        console.log(`[OpenRouter] Sending request to model: openrouter/free`);
         console.log(`[OpenRouter] Request params: temperature=0.3, max_tokens=4000, content_length=${content.length}`);
 
-        const completion = await openai.chat.completions.create({
-          model: "deepseek/deepseek-chat-v3.1:free",
-          messages: [
-            {
-              role: "system",
-              content: PRIVACY_ANALYSIS_PROMPT
-            },
-            {
-              role: "user",
-              content: `Analyze this privacy policy:\n\n${content.substring(0, 16000)}` // Limit content size
-            }
-          ],
-          temperature: 0.3,
-          max_tokens: 4000,
-        }).catch((apiError) => {
+        const completion = await openrouter.chat.send({
+          chatGenerationParams: {
+            model: "openrouter/free",
+            messages: [
+              {
+                role: "system",
+                content: PRIVACY_ANALYSIS_PROMPT
+              },
+              {
+                role: "user",
+                content: `Analyze this privacy policy:\n\n${smartTruncate(content, 16000)}`
+              }
+            ],
+            temperature: 0.3,
+            maxTokens: 4000,
+            stream: false,
+          },
+        }).catch((apiError: any) => {
           // Log raw API error for debugging
           console.error('[OpenRouter] API call failed with error:', {
             message: apiError?.message,
@@ -957,7 +992,7 @@ export async function POST(request: NextRequest) {
         }
 
         analysisText = completion.choices?.[0]?.message?.content;
-        console.log(`[OpenRouter] Response received, length: ${analysisText?.length || 0}, finish_reason: ${completion.choices?.[0]?.finish_reason}`);
+        console.log(`[OpenRouter] Response received, length: ${analysisText?.length || 0}, finish_reason: ${completion.choices?.[0]?.finishReason}`);
 
         if (analysisText) {
           console.log(`[Analysis] ✓ Successfully completed using ${keyName}`);
@@ -1022,6 +1057,69 @@ export async function POST(request: NextRequest) {
       console.error('Failed to parse AI response:', parseError);
       throw new Error('Failed to parse analysis results');
     }
+
+    // --- Server-side scoring validation ---
+    // Define category weights (must match the prompt)
+    const CATEGORY_WEIGHTS: Record<string, number> = {
+      data_collection: 30,
+      data_sharing: 25,
+      user_rights: 20,
+      security_measures: 15,
+      compliance_framework: 7,
+      transparency: 3,
+    };
+
+    // Clamp each category score to 1-10 range
+    if (analysis.categories && typeof analysis.categories === 'object') {
+      for (const key of Object.keys(analysis.categories)) {
+        const cat = analysis.categories[key];
+        if (cat && typeof cat.score === 'number') {
+          cat.score = Math.round(Math.min(10, Math.max(1, cat.score)) * 10) / 10;
+        }
+      }
+    }
+
+    // Recalculate overall_score as the true weighted average
+    let weightedSum = 0;
+    let totalWeight = 0;
+    for (const [key, weight] of Object.entries(CATEGORY_WEIGHTS)) {
+      const cat = analysis.categories?.[key];
+      if (cat && typeof cat.score === 'number') {
+        weightedSum += cat.score * weight;
+        totalWeight += weight;
+      }
+    }
+    if (totalWeight > 0) {
+      analysis.overall_score = Math.round((weightedSum / totalWeight) * 10) / 10;
+    }
+
+    // Derive risk_level deterministically from overall_score
+    if (analysis.overall_score >= 9) {
+      analysis.risk_level = 'EXEMPLARY';
+    } else if (analysis.overall_score >= 7) {
+      analysis.risk_level = 'LOW';
+    } else if (analysis.overall_score >= 5) {
+      analysis.risk_level = 'MODERATE';
+    } else if (analysis.overall_score >= 3) {
+      analysis.risk_level = 'MODERATE-HIGH';
+    } else {
+      analysis.risk_level = 'HIGH';
+    }
+
+    // Derive privacy_grade deterministically from overall_score
+    if (analysis.overall_score >= 9.5) analysis.privacy_grade = 'A+';
+    else if (analysis.overall_score >= 9) analysis.privacy_grade = 'A';
+    else if (analysis.overall_score >= 8.5) analysis.privacy_grade = 'A-';
+    else if (analysis.overall_score >= 8) analysis.privacy_grade = 'B+';
+    else if (analysis.overall_score >= 7.5) analysis.privacy_grade = 'B';
+    else if (analysis.overall_score >= 7) analysis.privacy_grade = 'B-';
+    else if (analysis.overall_score >= 6.5) analysis.privacy_grade = 'C+';
+    else if (analysis.overall_score >= 6) analysis.privacy_grade = 'C';
+    else if (analysis.overall_score >= 5.5) analysis.privacy_grade = 'C-';
+    else if (analysis.overall_score >= 5) analysis.privacy_grade = 'D+';
+    else if (analysis.overall_score >= 4.5) analysis.privacy_grade = 'D';
+    else if (analysis.overall_score >= 4) analysis.privacy_grade = 'D-';
+    else analysis.privacy_grade = 'F';
 
     // Save analysis to D1 database if available
     if (db) {
