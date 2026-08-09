@@ -24,7 +24,7 @@ export function Header() {
               <Shield className="h-6 w-6 text-white" />
             </div>
             <span className="text-2xl font-black text-gray-900 font-[family-name:var(--font-poppins)]">
-              PrivacyHub.in
+              PrivacyAnalyzer.in
             </span>
           </Link>
 

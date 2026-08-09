@@ -783,7 +783,7 @@ export function BrowserDataExposureEnhanced() {
                   <li>✅ All processing happens <strong>entirely in your browser</strong></li>
                   <li>✅ Data is <strong>immediately discarded when you close this tab</strong></li>
                   <li>✅ <strong>No network requests</strong> - everything stays on your device</li>
-                  <li>✅ <strong>No cookies, tracking, or persistent storage</strong> by PrivacyHub</li>
+                  <li>✅ <strong>No cookies, tracking, or persistent storage</strong> by PrivacyAnalyzer</li>
                   <li>✅ <strong>Open source code</strong> - verify our privacy claims</li>
                 </ul>
               </div>

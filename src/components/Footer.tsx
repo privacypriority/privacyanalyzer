@@ -15,7 +15,7 @@ export function Footer() {
               <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
                 <Shield className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">PrivacyHub.in</span>
+              <span className="text-xl font-bold text-gray-900">PrivacyAnalyzer.in</span>
             </Link>
             <p className="text-gray-500 text-sm max-w-xs">
               Open-source privacy policy analyser powered by AI. Understand how websites handle your personal data.
@@ -60,7 +60,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li>
                 <a
-                  href="https://github.com/privacypriority/privacyhub"
+                  href="https://github.com/privacypriority/privacyanalyzer"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-500 hover:text-gray-900 transition-colors inline-flex items-center gap-1.5"
@@ -94,7 +94,7 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-10 pt-6 border-t border-gray-200 text-center text-sm text-gray-400">
-          &copy; {new Date().getFullYear()} PrivacyHub.in. Open source privacy analysis platform.
+          &copy; {new Date().getFullYear()} PrivacyAnalyzer.in. Open source privacy analysis platform.
         </div>
       </div>
     </footer>

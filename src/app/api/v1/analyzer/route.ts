@@ -68,12 +68,22 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
-// Initialize OpenRouter client
+// OpenRouter models in fallback order: default (primary) first, then each fallback on failure.
+// https://openrouter.ai/openrouter/free  (default — auto-routed free model)
+// https://openrouter.ai/nvidia/nemotron-3-ultra-550b-a55b:free
+// https://openrouter.ai/openai/gpt-oss-20b:free
+const ANALYSIS_MODELS = [
+  'openrouter/free',
+  'nvidia/nemotron-3-ultra-550b-a55b:free',
+  'openai/gpt-oss-20b:free',
+] as const;
+
+// Initialize OpenRouter client (OPENROUTER_API_0 is the default key)
 function getOpenRouterClient() {
   return new OpenRouter({
-    apiKey: process.env.OPENROUTER_API,
-    httpReferer: "https://privacyhub.in",
-    xTitle: "PrivacyHub - Privacy Policy Analyzer",
+    apiKey: process.env.OPENROUTER_API_0 || process.env.OPENROUTER_API,
+    httpReferer: "https://privacyanalyzer.in",
+    xTitle: "PrivacyAnalyzer - Privacy Policy Analyzer",
   });
 }
 
@@ -326,12 +336,12 @@ export async function POST(request: NextRequest) {
     const sanitizedUrl = urlValidation.sanitized!;
 
     // Check API configuration
-    if (!process.env.OPENROUTER_API) {
+    if (!process.env.OPENROUTER_API_0 && !process.env.OPENROUTER_API) {
       return NextResponse.json(
         {
           success: false,
           error: 'API configuration error',
-          message: 'OPENROUTER_API key not configured'
+          message: 'No OpenRouter API key configured (set OPENROUTER_API_0)'
         },
         { status: 500 }
       );
@@ -453,31 +463,43 @@ export async function POST(request: NextRequest) {
 
     console.log('[API v1] Analyzing with AI...');
 
-    // Analyze with AI
+    // Analyze with AI, trying the primary model first and falling back on failure.
     const openrouter = getOpenRouterClient();
-    const completion = await openrouter.chat.send({
-      chatGenerationParams: {
-        model: "openrouter/free",
-        messages: [
-          {
-            role: "system",
-            content: PRIVACY_ANALYSIS_PROMPT
-          },
-          {
-            role: "user",
-            content: `Analyze this privacy policy:\n\n${smartTruncate(content, 16000)}`
-          }
-        ],
-        temperature: 0.3,
-        maxTokens: 2000,
-        stream: false,
-      },
-    });
+    let analysisText: string | undefined;
+    let lastModelError: Error | null = null;
 
-    const analysisText = completion.choices[0]?.message?.content as string | undefined;
+    for (const model of ANALYSIS_MODELS) {
+      try {
+        console.log(`[API v1] Sending request to model: ${model}`);
+        const completion = await openrouter.chat.send({
+          chatGenerationParams: {
+            model,
+            messages: [
+              {
+                role: "system",
+                content: PRIVACY_ANALYSIS_PROMPT
+              },
+              {
+                role: "user",
+                content: `Analyze this privacy policy:\n\n${smartTruncate(content, 16000)}`
+              }
+            ],
+            temperature: 0.3,
+            maxTokens: 2000,
+            stream: false,
+          },
+        });
+
+        analysisText = completion.choices[0]?.message?.content as string | undefined;
+        if (analysisText) break;
+      } catch (modelError) {
+        lastModelError = modelError instanceof Error ? modelError : new Error(String(modelError));
+        console.error(`[API v1] Model ${model} failed:`, lastModelError.message);
+      }
+    }
 
     if (!analysisText) {
-      throw new Error('No analysis generated');
+      throw lastModelError || new Error('No analysis generated');
     }
 
     // Parse JSON response

@@ -10,9 +10,9 @@ import {
   generateContentHash,
   extractDomain,
   initializeDatabase,
+  isDatabaseConfigured,
   type AnalysisData,
-  type D1Database
-} from '@/lib/d1-database';
+} from '@/lib/db';
 import { detectPlatform, hasNodeJSRuntime, getPlatformDescription } from '@/lib/platform-detector';
 
 // Runtime configuration
@@ -23,33 +23,19 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 60 seconds max execution time (Vercel Pro)
 
-// Helper function to get D1 database from Cloudflare Workers environment
-function getD1Database(): D1Database | undefined {
-  // Method 1: Check global DB binding (most common)
-  if (typeof globalThis !== 'undefined' && (globalThis as any).DB) {
-    return (globalThis as any).DB as D1Database;
-  }
-  
-  // Method 2: Check process.env for database binding
-  if (typeof process !== 'undefined' && process.env && (process.env as any).DB) {
-    return (process.env as any).DB as D1Database;
-  }
-  
-  // Method 3: Check if running in Cloudflare Workers with different binding name
-  const cloudflareEnv = (globalThis as any).env || (globalThis as any).__env;
-  if (cloudflareEnv && cloudflareEnv.DB) {
-    return cloudflareEnv.DB as D1Database;
-  }
-  
-  return undefined;
-}
+// OpenRouter models in fallback order: default (primary) first, then each fallback on failure.
+// https://openrouter.ai/openrouter/free  (default — auto-routed free model)
+// https://openrouter.ai/nvidia/nemotron-3-ultra-550b-a55b:free
+// https://openrouter.ai/openai/gpt-oss-20b:free
+const ANALYSIS_MODELS = [
+  'openrouter/free',
+  'nvidia/nemotron-3-ultra-550b-a55b:free',
+  'openai/gpt-oss-20b:free',
+] as const;
 
-// Initialize OpenRouter client with best available API key
-async function getOpenRouterClient(env?: Record<string, string | undefined> | { DB?: D1Database }) {
-  // Extract only string environment variables for the key manager
-  const envVars: Record<string, string | undefined> | undefined =
-    env && typeof env === 'object' && !('DB' in env) ? env as Record<string, string | undefined> : undefined;
-  const keyInfo = await getBestAvailableKey(envVars);
+// Initialize OpenRouter client with best available API key (keys read from process.env)
+async function getOpenRouterClient() {
+  const keyInfo = await getBestAvailableKey();
 
   if (!keyInfo) {
     throw new Error('No OpenRouter API keys available');
@@ -60,8 +46,8 @@ async function getOpenRouterClient(env?: Record<string, string | undefined> | { 
   return {
     client: new OpenRouter({
       apiKey: keyInfo.key,
-      httpReferer: "https://privacyhub.in",
-      xTitle: "PrivacyHub - Privacy Policy Analyzer",
+      httpReferer: "https://privacyanalyzer.in",
+      xTitle: "PrivacyAnalyzer - Privacy Policy Analyzer",
     }),
     keyName: keyInfo.name,
   };
@@ -506,10 +492,6 @@ export async function POST(request: NextRequest) {
     console.log(`[Platform] Running on: ${platformDesc}`);
     console.log('Privacy analysis request received');
 
-    // Get Cloudflare environment bindings
-    // In Cloudflare Workers, env is available through the request context
-    const env = (request as { env?: CloudflareEnv }).env || process.env as unknown as CloudflareEnv;
-
     // Rate limiting disabled for MVP
     // const clientIp = getClientIp(request);
     // const rateLimitCheck = analysisRateLimiter.check(clientIp);
@@ -546,37 +528,32 @@ export async function POST(request: NextRequest) {
 
     const sanitizedUrl = urlValidation.sanitized!;
 
-    // Get environment variables from Cloudflare bindings or process.env (fallback for local dev)
-    const FIRECRAWL_API_KEY = env?.FIRECRAWL_API_KEY || process.env.FIRECRAWL_API_KEY;
+    // Firecrawl API key from environment
+    const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY;
 
     // Diagnostic logging for environment variable availability (without exposing actual keys)
     console.log('[Env Check] Available OpenRouter keys:', {
-      OPENROUTER_API: !!(env?.OPENROUTER_API || process.env.OPENROUTER_API),
-      OPENROUTER_API_1: !!(env?.OPENROUTER_API_1 || process.env.OPENROUTER_API_1),
-      OPENROUTER_API_2: !!(env?.OPENROUTER_API_2 || process.env.OPENROUTER_API_2),
+      OPENROUTER_API_0: !!process.env.OPENROUTER_API_0,
+      OPENROUTER_API: !!process.env.OPENROUTER_API,
+      OPENROUTER_API_1: !!process.env.OPENROUTER_API_1,
+      OPENROUTER_API_2: !!process.env.OPENROUTER_API_2,
     });
 
-    // No need to check OPENROUTER_API here - the key manager will handle it
-
-    // Initialize D1 database for Cloudflare Workers
-    let db: D1Database | undefined = undefined;
-
-    // Try to access D1 database from Cloudflare Workers environment
-    db = getD1Database();
-
-    if (db) {
-      console.log('[D1] Database binding found, initializing schema...');
+    // Initialize Postgres (Neon) database if configured; degrade gracefully otherwise.
+    let db = false;
+    if (isDatabaseConfigured()) {
+      console.log('[DB] Database configured, initializing schema...');
       try {
-        await initializeDatabase(db);
-        console.log('[D1] ✓ Database initialized successfully');
+        await initializeDatabase();
+        db = true;
+        console.log('[DB] ✓ Database initialized successfully');
       } catch (dbError) {
-        console.error('[D1] ✗ Database initialization failed:', dbError);
+        console.error('[DB] ✗ Database initialization failed:', dbError);
         // Continue without database functionality
-        db = undefined;
+        db = false;
       }
     } else {
-      console.log('[D1] Database binding not found - running without caching');
-      console.log('[D1] Note: If running on Cloudflare Workers, ensure DB binding is configured in wrangler.toml');
+      console.log('[DB] DATABASE_URL not set - running without caching/history');
     }
 
     console.log('Scraping URL:', sanitizedUrl);
@@ -772,7 +749,7 @@ export async function POST(request: NextRequest) {
       console.log('[D1 Cache] Checking for cached analysis...');
       console.log('[D1 Cache] Domain:', domain, 'Content Hash:', contentHash.substring(0, 16) + '...');
 
-      const cachedAnalysis = await getCachedAnalysis(db, domain, contentHash);
+      const cachedAnalysis = await getCachedAnalysis(domain, contentHash);
 
       if (cachedAnalysis) {
         const cacheAgeDays = Math.floor(
@@ -956,8 +933,10 @@ export async function POST(request: NextRequest) {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       let currentKeyName = '';
+      // Use the primary model first, then fall back to the secondary model on retries.
+      const currentModel = ANALYSIS_MODELS[Math.min(attempt, ANALYSIS_MODELS.length - 1)];
       try {
-        const openRouterResult = await getOpenRouterClient(env);
+        const openRouterResult = await getOpenRouterClient();
         if (!openRouterResult) {
           throw new Error('No OpenRouter API keys available. Please configure OPENROUTER_API, OPENROUTER_API_1, or OPENROUTER_API_2 environment variables.');
         }
@@ -965,12 +944,12 @@ export async function POST(request: NextRequest) {
         currentKeyName = keyName;
 
         console.log(`[Analysis] Using ${keyName} for AI analysis (attempt ${attempt + 1}/${maxRetries})`);
-        console.log(`[OpenRouter] Sending request to model: openrouter/free`);
+        console.log(`[OpenRouter] Sending request to model: ${currentModel}`);
         console.log(`[OpenRouter] Request params: temperature=0.3, maxTokens=4000, content_length=${content.length}`);
 
         const completion = await openrouter.chat.send({
           chatGenerationParams: {
-            model: "openrouter/free",
+            model: currentModel,
             messages: [
               {
                 role: "system",
@@ -1152,12 +1131,11 @@ export async function POST(request: NextRequest) {
     console.log(`[Scoring] Validated scores - overall: ${analysis.overall_score}, grade: ${analysis.privacy_grade}, risk: ${analysis.risk_level}`);
     // --- End scoring validation ---
 
-    // Save analysis to D1 database if available
+    // Save analysis to the database if available
     if (db) {
       try {
-        console.log('[D1] Saving analysis to database...');
+        console.log('[DB] Saving analysis to database...');
         const analysisId = await saveAnalysis(
-          db,
           sanitizedUrl,
           content,
           analysis as AnalysisData,
@@ -1166,9 +1144,9 @@ export async function POST(request: NextRequest) {
             homepageScreenshot
           }
         );
-        console.log(`[D1] ✓ Analysis saved with ID: ${analysisId}`);
+        console.log(`[DB] ✓ Analysis saved with ID: ${analysisId}`);
       } catch (dbError) {
-        console.error('[D1] ✗ Failed to save analysis:', dbError);
+        console.error('[DB] ✗ Failed to save analysis:', dbError);
         // Non-blocking - continue even if save fails
       }
     }

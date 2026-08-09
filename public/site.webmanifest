@@ -1,6 +1,6 @@
 {
-  "name": "PrivacyHub - Privacy Policy Analyzer",
-  "short_name": "PrivacyHub",
+  "name": "PrivacyAnalyzer - Privacy Policy Analyzer",
+  "short_name": "PrivacyAnalyzer",
   "description": "AI-powered privacy policy analysis and compliance scoring",
   "icons": [
     {

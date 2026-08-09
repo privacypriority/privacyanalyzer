@@ -344,8 +344,9 @@ export default function PrivacyAnalyzer() {
     setResult(null);
     setProgress(10);
 
+    let progressInterval: ReturnType<typeof setInterval> | undefined;
     try {
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setProgress(prev => Math.min(prev + Math.random() * 8, 90));
       }, 2000);
 
@@ -386,6 +387,7 @@ export default function PrivacyAnalyzer() {
         setProgress(0);
       }, 300);
     } catch (err: unknown) {
+      if (progressInterval) clearInterval(progressInterval);
       setError(err instanceof Error ? err.message : 'An error occurred');
       setLoading(false);
       setProgress(0);
@@ -516,7 +518,7 @@ export default function PrivacyAnalyzer() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-gray-900">DPDP Act 2023 Compliance</span>
             </div>
-            <ComplianceGauge status={result.analysis.regulatory_compliance.dpdp_act_compliance} />
+            <ComplianceGauge status={result.analysis.regulatory_compliance?.dpdp_act_compliance ?? ''} />
           </div>
 
           {/* Executive Summary */}
@@ -529,11 +531,11 @@ export default function PrivacyAnalyzer() {
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Category Overview</h3>
-              <CategoryRadar categories={result.analysis.categories} />
+              <CategoryRadar categories={result.analysis.categories ?? {}} />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Score Breakdown</h3>
-              <CategoryBarChart categories={result.analysis.categories} />
+              <CategoryBarChart categories={result.analysis.categories ?? {}} />
             </div>
           </div>
 
@@ -542,7 +544,7 @@ export default function PrivacyAnalyzer() {
             <h3 className="text-sm font-semibold text-gray-900 mb-4">Category Details</h3>
             <div className="space-y-3">
               {CATEGORY_ORDER.map(key => {
-                const category = result.analysis.categories[key];
+                const category = result.analysis.categories?.[key];
                 const meta = CATEGORY_META[key];
                 if (!category || !meta) return null;
                 const color = getScoreColor(category.score);

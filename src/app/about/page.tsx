@@ -5,18 +5,18 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, Github, Heart } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: "About Privacy Analysis | PrivacyHub.in",
-  description: "Learn why privacy policy analysis matters in today's digital age. Understand privacy concerns, user impact, and how PrivacyHub helps protect your digital rights.",
+  title: "About Privacy Analysis | PrivacyAnalyzer.in",
+  description: "Learn why privacy policy analysis matters in today's digital age. Understand privacy concerns, user impact, and how PrivacyAnalyzer helps protect your digital rights.",
   keywords: "privacy policy analysis, digital privacy, data protection, user privacy rights, online privacy awareness",
   openGraph: {
-    title: "About Privacy Analysis | PrivacyHub.in",
+    title: "About Privacy Analysis | PrivacyAnalyzer.in",
     description: "Learn why privacy policy analysis matters in today's digital age",
     type: "website",
-    url: "https://privacyhub.in/about",
+    url: "https://privacyanalyzer.in/about",
   },
   twitter: {
     card: "summary_large_image",
-    title: "About Privacy Analysis | PrivacyHub.in",
+    title: "About Privacy Analysis | PrivacyAnalyzer.in",
     description: "Learn why privacy policy analysis matters in today's digital age",
   },
 };
@@ -143,19 +143,19 @@ export default function AboutPage() {
             <p className="text-2xl font-bold mb-4">Understanding Your Rights</p>
             <p className="text-lg text-blue-100 max-w-4xl mx-auto leading-relaxed">
               India&apos;s <strong className="text-white">DPDP Act 2023</strong> gives you rights over your personal data.
-              Companies must follow these rules when handling your information. <strong className="text-white">PrivacyHub helps you understand</strong> what
+              Companies must follow these rules when handling your information. <strong className="text-white">PrivacyAnalyzer helps you understand</strong> what
               companies are doing with your data and whether they&apos;re following the law.
             </p>
           </div>
         </div>
       </section>
 
-      {/* How PrivacyHub Helps */}
+      {/* How PrivacyAnalyzer Helps */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              How PrivacyHub Protects You
+              How PrivacyAnalyzer Protects You
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-4">
               We read the boring legal stuff so you don&apos;t have to.
@@ -213,7 +213,7 @@ export default function AboutPage() {
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-6">Built By the Community, For the Community</h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-4">
-              PrivacyHub is 100% open source. Anyone can see how we work, suggest improvements, or help make it better.
+              PrivacyAnalyzer is 100% open source. Anyone can see how we work, suggest improvements, or help make it better.
             </p>
             <p className="text-lg text-gray-700 max-w-3xl mx-auto">
               No corporate agenda. No hidden motives. Just people helping people protect their privacy.
@@ -248,7 +248,7 @@ export default function AboutPage() {
                     <span className="text-2xl">🚀</span>
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">Continuous Improvement</h4>
-                      <p className="text-gray-700 text-sm">Developers worldwide can suggest fixes and features to make PrivacyHub better every day.</p>
+                      <p className="text-gray-700 text-sm">Developers worldwide can suggest fixes and features to make PrivacyAnalyzer better every day.</p>
                     </div>
                   </li>
                 </ul>
@@ -275,7 +275,7 @@ export default function AboutPage() {
                     <span className="text-2xl">📢</span>
                     <div>
                       <h4 className="font-bold text-gray-900 mb-1">For Everyone Else</h4>
-                      <p className="text-gray-700 text-sm">Share PrivacyHub with friends and family. Help spread privacy awareness!</p>
+                      <p className="text-gray-700 text-sm">Share PrivacyAnalyzer with friends and family. Help spread privacy awareness!</p>
                     </div>
                   </li>
                   <li className="flex items-start gap-3">
@@ -293,7 +293,7 @@ export default function AboutPage() {
           <div className="text-center">
             <Button size="lg" asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-lg px-8 py-6">
               <a
-                href="https://github.com/privacypriority/privacyhub"
+                href="https://github.com/privacypriority/privacyanalyzer"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3"
@@ -399,7 +399,7 @@ export default function AboutPage() {
             </div>
             <p className="text-lg text-blue-100 max-w-3xl mx-auto leading-relaxed">
               We believe privacy is a fundamental human right, not a luxury. It shouldn&apos;t cost money to protect yourself online.
-              That&apos;s why PrivacyHub will always be free, open source, and built for people—not profits.
+              That&apos;s why PrivacyAnalyzer will always be free, open source, and built for people—not profits.
             </p>
           </div>
         </div>

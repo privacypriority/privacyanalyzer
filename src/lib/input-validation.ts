@@ -60,18 +60,41 @@ export function validateUrl(url: string): { valid: boolean; error?: string; sani
       return { valid: false, error: 'Cannot analyze localhost or internal URLs' };
     }
 
+    // Reject alternate IPv4 encodings that bypass dotted-quad checks
+    // (e.g. http://2130706433 or http://0x7f000001 both resolve to 127.0.0.1)
+    if (/^\d+$/.test(hostname) || /^0x[0-9a-f]+$/i.test(hostname)) {
+      return { valid: false, error: 'Numeric IP-address URLs are not allowed' };
+    }
+
+    // IPv6 SSRF prevention (hostname may be bracketed, e.g. "[::1]")
+    const bareHost = hostname.replace(/^\[/, '').replace(/\]$/, '');
+    if (bareHost.includes(':')) {
+      if (
+        bareHost === '::' ||
+        bareHost === '::1' ||
+        bareHost.startsWith('fc') || // unique-local fc00::/7
+        bareHost.startsWith('fd') ||
+        bareHost.startsWith('fe80') || // link-local
+        bareHost.startsWith('::ffff:') // IPv4-mapped (could wrap a private/loopback v4)
+      ) {
+        return { valid: false, error: 'Cannot analyze private or loopback IPv6 addresses' };
+      }
+    }
+
     // Check for private IP ranges (SSRF prevention)
     const ipv4Pattern = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
     const match = hostname.match(ipv4Pattern);
     if (match) {
       const octets = match.slice(1, 5).map(Number);
 
-      // Private IP ranges: 10.x.x.x, 172.16-31.x.x, 192.168.x.x
+      // Private/reserved IP ranges
       if (
         octets[0] === 10 ||
         (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31) ||
         (octets[0] === 192 && octets[1] === 168) ||
-        octets[0] === 127 // Loopback
+        octets[0] === 127 || // Loopback
+        octets[0] === 0 || // "This" network
+        (octets[0] === 169 && octets[1] === 254) // Link-local / cloud metadata (169.254.169.254)
       ) {
         return { valid: false, error: 'Cannot analyze private IP addresses' };
       }

@@ -26,7 +26,7 @@ export function SupportSection() {
       name: 'Generic Donation',
       icon: <Heart className="h-6 w-6" />,
       color: 'bg-pink-100 text-pink-800',
-      description: 'Support infrastructure costs and keep PrivacyHub free for everyone',
+      description: 'Support infrastructure costs and keep PrivacyAnalyzer free for everyone',
       url: 'https://github.com/sponsors/privacypriority'
     },
     {
@@ -34,7 +34,7 @@ export function SupportSection() {
       icon: <Gift className="h-6 w-6" />,
       color: 'bg-purple-100 text-purple-800',
       description: 'Contribute code, report bugs, or improve documentation on GitHub',
-      url: 'https://github.com/privacypriority/privacyhub'
+      url: 'https://github.com/privacypriority/privacyanalyzer'
     }
   ];
 
@@ -49,9 +49,9 @@ export function SupportSection() {
                 <Heart className="h-8 w-8 text-blue-600" />
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-blue-900 mb-4">Support PrivacyHub</h3>
+            <h3 className="text-2xl font-bold text-blue-900 mb-4">Support PrivacyAnalyzer</h3>
             <p className="text-lg text-blue-800 max-w-3xl mx-auto leading-relaxed">
-              PrivacyHub is a free, open-source project that helps protect your digital privacy. 
+              PrivacyAnalyzer is a free, open-source project that helps protect your digital privacy. 
               Your support helps us cover API costs and maintain this valuable service for everyone.
             </p>
           </div>
@@ -141,7 +141,7 @@ export function SupportSection() {
             <div className="flex flex-wrap justify-center gap-4">
               <Button variant="outline" size="sm" asChild>
                 <a
-                  href="https://github.com/privacypriority/privacyhub"
+                  href="https://github.com/privacypriority/privacyanalyzer"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2"
@@ -151,7 +151,7 @@ export function SupportSection() {
               </Button>
               <Button variant="outline" size="sm" asChild>
                 <a
-                  href="https://twitter.com/intent/tweet?text=Check%20out%20PrivacyHub%20-%20a%20free%20tool%20to%20analyze%20privacy%20policies%20https://privacyhub.in"
+                  href="https://twitter.com/intent/tweet?text=Check%20out%20PrivacyAnalyzer%20-%20a%20free%20tool%20to%20analyze%20privacy%20policies%20https://privacyanalyzer.in"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2"
@@ -161,7 +161,7 @@ export function SupportSection() {
               </Button>
               <Button variant="outline" size="sm" asChild>
                 <a
-                  href="https://github.com/privacypriority/privacyhub/issues"
+                  href="https://github.com/privacypriority/privacyanalyzer/issues"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2"
@@ -187,7 +187,7 @@ export function SupportSection() {
                 to expand features and improve the service.
               </p>
               <p className="text-xs text-gray-600">
-                PrivacyHub is committed to remaining free and open-source. Your privacy is never for sale.
+                PrivacyAnalyzer is committed to remaining free and open-source. Your privacy is never for sale.
               </p>
             </div>
           </div>

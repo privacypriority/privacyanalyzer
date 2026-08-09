@@ -173,7 +173,7 @@ function generateStatusPageHTML(keys: KeyStatusDisplay[], stats: StatsDisplay): 
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
   <meta name="googlebot" content="noindex, nofollow">
   <meta name="bingbot" content="noindex, nofollow">
-  <title>PrivacyHub - API Service Status</title>
+  <title>PrivacyAnalyzer - API Service Status</title>
   <style>
     * {
       margin: 0;
@@ -454,7 +454,7 @@ function generateStatusPageHTML(keys: KeyStatusDisplay[], stats: StatsDisplay): 
 <body>
   <div class="container">
     <div class="header">
-      <h1>🔒 PrivacyHub API Status</h1>
+      <h1>🔒 PrivacyAnalyzer API Status</h1>
       <p>OpenRouter API Key Health & Usage Monitor</p>
       <div class="header-actions">
         <button class="refresh-btn" onclick="refreshStatus()">
@@ -525,7 +525,7 @@ function generateStatusPageHTML(keys: KeyStatusDisplay[], stats: StatsDisplay): 
       })}</p>
       <p style="margin-top: 0.5rem;">
         <a href="/api/credits?format=json" target="_blank">View JSON Format</a> |
-        <a href="https://privacyhub.in" target="_blank">Back to PrivacyHub</a>
+        <a href="https://privacyanalyzer.in" target="_blank">Back to PrivacyAnalyzer</a>
       </p>
       <p style="margin-top: 1rem; font-size: 0.75rem;">
         🔐 API keys are never exposed for security. Environment variable names used for identification.
