@@ -16,7 +16,6 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
-    "@crawlee/playwright": "^3.15.1",
     "@mendable/firecrawl-js": "^4.3.4",
     "@neondatabase/serverless": "^1.1.0",
     "@openrouter/sdk": "^0.9.11",
