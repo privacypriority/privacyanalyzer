@@ -13,10 +13,10 @@ export default function SupportPage() {
             Help Us Keep This Free for Everyone
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 max-w-4xl mx-auto leading-relaxed mb-4">
-            PrivacyHub will always be 100% free. No ads, no tracking, no premium plans.
+            PrivacyAnalyzer will always be 100% free. No ads, no tracking, no premium plans.
           </p>
           <p className="text-lg md:text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed mb-10">
-            But running this service costs money—servers, AI analysis, and maintenance. If PrivacyHub helped you,
+            But running this service costs money—servers, AI analysis, and maintenance. If PrivacyAnalyzer helped you,
             <strong className="text-purple-700"> consider helping us help others.</strong>
           </p>
 
@@ -110,7 +110,7 @@ export default function SupportPage() {
                   <ul className="space-y-2 text-blue-800">
                     <li className="flex items-center gap-2">
                       <span className="text-blue-600">✓</span>
-                      <span>Keep PrivacyHub running 24/7 for everyone</span>
+                      <span>Keep PrivacyAnalyzer running 24/7 for everyone</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="text-blue-600">✓</span>
@@ -166,11 +166,11 @@ export default function SupportPage() {
               <div className="text-5xl mb-4">💻</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Contribute Code</h3>
               <p className="text-gray-700 mb-6 leading-relaxed">
-                Know how to code? Help us improve PrivacyHub on GitHub. Fix bugs, add features,
+                Know how to code? Help us improve PrivacyAnalyzer on GitHub. Fix bugs, add features,
                 or suggest improvements. Every contribution makes a difference!
               </p>
               <a
-                href="https://github.com/privacypriority/privacyhub/issues"
+                href="https://github.com/privacypriority/privacyanalyzer/issues"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-700 font-bold inline-flex items-center gap-2"
@@ -183,7 +183,7 @@ export default function SupportPage() {
               <div className="text-5xl mb-4">📢</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Spread the Word</h3>
               <p className="text-gray-700 mb-6 leading-relaxed">
-                Share PrivacyHub with your friends, family, and colleagues. Post on social media.
+                Share PrivacyAnalyzer with your friends, family, and colleagues. Post on social media.
                 The more people know about their privacy rights, the better!
               </p>
               <a
@@ -198,11 +198,11 @@ export default function SupportPage() {
               <div className="text-5xl mb-4">💡</div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Give Feedback</h3>
               <p className="text-gray-700 mb-6 leading-relaxed">
-                Found a bug? Have an idea? Tell us! Your feedback helps us make PrivacyHub
+                Found a bug? Have an idea? Tell us! Your feedback helps us make PrivacyAnalyzer
                 better for everyone. We read and value every suggestion.
               </p>
               <a
-                href="https://github.com/privacypriority/privacyhub/issues"
+                href="https://github.com/privacypriority/privacyanalyzer/issues"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-purple-600 hover:text-purple-700 font-bold inline-flex items-center gap-2"

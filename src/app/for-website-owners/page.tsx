@@ -20,7 +20,7 @@ export default function ForWebsiteOwnersPage() {
           </h1>
 
           <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
-            We believe in collaboration over criticism. If your website or organization was analyzed by PrivacyHub,
+            We believe in collaboration over criticism. If your website or organization was analyzed by PrivacyAnalyzer,
             we welcome your feedback, corrections, and partnership in building better privacy practices.
           </p>
         </div>
@@ -35,7 +35,7 @@ export default function ForWebsiteOwnersPage() {
               Our Mission
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
-              PrivacyHub.in exists to <strong>educate users</strong> about privacy policies and help them make
+              PrivacyAnalyzer.in exists to <strong>educate users</strong> about privacy policies and help them make
               informed decisions. We are <strong>not here to shame or attack</strong> any business. Our goal is to
               create transparency and encourage improvement across the web.
             </p>
@@ -150,7 +150,7 @@ export default function ForWebsiteOwnersPage() {
                   General Feedback or Questions
                 </h3>
                 <p className="text-gray-700 leading-relaxed ml-8">
-                  Have thoughts on how we can improve PrivacyHub? Want to understand our methodology better?
+                  Have thoughts on how we can improve PrivacyAnalyzer? Want to understand our methodology better?
                   Curious about how your privacy policy was scored? We&apos;re here to listen.
                 </p>
               </CardContent>
@@ -212,7 +212,7 @@ export default function ForWebsiteOwnersPage() {
                   asChild
                 >
                   <a
-                    href="https://github.com/privacypriority/privacyhub/issues"
+                    href="https://github.com/privacypriority/privacyanalyzer/issues"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center gap-2"
@@ -326,7 +326,7 @@ export default function ForWebsiteOwnersPage() {
               asChild
             >
               <a
-                href="https://github.com/privacypriority/privacyhub/issues"
+                href="https://github.com/privacypriority/privacyanalyzer/issues"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2"

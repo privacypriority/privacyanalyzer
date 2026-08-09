@@ -29,34 +29,40 @@ let requestCounter = 0;
  * Supports both process.env (local) and Cloudflare Workers env binding
  */
 function getAllKeys(env?: Record<string, string | undefined>): Array<{ name: string; key: string }> {
+  // OPENROUTER_API_0 is the pinned default (primary) key — always tried first when set.
+  const primaryKey = env?.OPENROUTER_API_0 || process.env.OPENROUTER_API_0;
   const defaultKey = env?.OPENROUTER_API || process.env.OPENROUTER_API;
   const keyOne = env?.OPENROUTER_API_1 || process.env.OPENROUTER_API_1;
   const keyTwo = env?.OPENROUTER_API_2 || process.env.OPENROUTER_API_2;
 
-  // Create array of available keys
+  // Fallback keys, used only when the primary is unavailable.
+  const fallbackKeys: Array<{ name: string; key: string }> = [];
+  if (defaultKey) fallbackKeys.push({ name: 'openrouter-default', key: defaultKey });
+  if (keyOne) fallbackKeys.push({ name: 'openrouter-one', key: keyOne });
+  if (keyTwo) fallbackKeys.push({ name: 'openrouter-two', key: keyTwo });
+
+  // Round-robin rotation across the fallback keys for load distribution.
+  if (fallbackKeys.length > 1) {
+    requestCounter++;
+    const rotationIndex = requestCounter % fallbackKeys.length;
+    for (let i = 0; i < rotationIndex; i++) {
+      const first = fallbackKeys.shift();
+      if (first) fallbackKeys.push(first);
+    }
+  }
+
+  // Assemble: primary (default) first, then rotated fallbacks.
   const availableKeys: Array<{ name: string; key: string }> = [];
-  if (defaultKey) availableKeys.push({ name: 'openrouter-default', key: defaultKey });
-  if (keyOne) availableKeys.push({ name: 'openrouter-one', key: keyOne });
-  if (keyTwo) availableKeys.push({ name: 'openrouter-two', key: keyTwo });
+  if (primaryKey) availableKeys.push({ name: 'openrouter-0', key: primaryKey });
+  availableKeys.push(...fallbackKeys);
 
   if (availableKeys.length === 0) {
     console.error('[KeyManager] No API keys configured');
     return [];
   }
 
-  // Round-robin rotation: rotate on each request for better load distribution
-  // This distributes requests evenly across all keys (e.g., 50 req/day × 3 keys = 150 total)
-  requestCounter++;
-  const rotationIndex = requestCounter % availableKeys.length;
-
-  // Rotate the array to start from different key each request
-  for (let i = 0; i < rotationIndex; i++) {
-    const first = availableKeys.shift();
-    if (first) availableKeys.push(first);
-  }
-
-  console.log(`[KeyManager] Round-robin rotation: Request #${requestCounter}, using: ${availableKeys[0]?.name}, fallbacks: [${availableKeys.slice(1).map(k => k.name).join(', ')}]`);
-  console.log(`[KeyManager] Total keys configured: ${availableKeys.length} (${availableKeys.length * 50} requests/day on free tier, ${availableKeys.length * 1000} if upgraded)`);
+  console.log(`[KeyManager] Default: ${availableKeys[0]?.name}, fallbacks: [${availableKeys.slice(1).map(k => k.name).join(', ')}] (request #${requestCounter})`);
+  console.log(`[KeyManager] Total keys configured: ${availableKeys.length}`);
 
   return availableKeys;
 }

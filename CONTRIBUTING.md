@@ -1,8 +1,8 @@
-# Contributing to PrivacyHub
+# Contributing to PrivacyAnalyzer
 
-First off, thank you for considering contributing to PrivacyHub! 🎉
+First off, thank you for considering contributing to PrivacyAnalyzer! 🎉
 
-PrivacyHub is an open-source project that aims to make privacy policies understandable for everyone. We welcome contributions from developers, designers, privacy experts, and anyone passionate about digital privacy.
+PrivacyAnalyzer is an open-source project that aims to make privacy policies understandable for everyone. We welcome contributions from developers, designers, privacy experts, and anyone passionate about digital privacy.
 
 ## Table of Contents
 
@@ -116,8 +116,8 @@ Help us improve our documentation:
 
 1. **Fork and clone the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/privacyhub.git
-   cd privacyhub
+   git clone https://github.com/YOUR_USERNAME/privacyanalyzer.git
+   cd privacyanalyzer
    ```
 
 2. **Install dependencies**
@@ -397,8 +397,8 @@ docs(readme): update installation instructions
 ### Resources
 
 - 📖 **Documentation**: [README.md](README.md) and [DEPLOYMENT.md](DEPLOYMENT.md)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/alokemajumder/privacyhub/discussions)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/alokemajumder/privacyhub/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/alokemajumder/privacyanalyzer/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/alokemajumder/privacyanalyzer/issues)
 
 ### Contact Maintainers
 
@@ -421,10 +421,10 @@ Contributors will be recognized in:
 
 ## License
 
-By contributing to PrivacyHub, you agree that your contributions will be licensed under the Apache License 2.0.
+By contributing to PrivacyAnalyzer, you agree that your contributions will be licensed under the Apache License 2.0.
 
 ---
 
-**Thank you for contributing to PrivacyHub! Together, we can make privacy policies more transparent and understandable for everyone.** 🎉
+**Thank you for contributing to PrivacyAnalyzer! Together, we can make privacy policies more transparent and understandable for everyone.** 🎉
 
-[⬆ Back to Top](#contributing-to-privacyhub)
+[⬆ Back to Top](#contributing-to-privacyanalyzer)

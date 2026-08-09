@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explains how PrivacyHub integrates India's **Digital Personal Data Protection Rules, 2025** (notified on November 13, 2025) into privacy policy analysis.
+This document explains how PrivacyAnalyzer integrates India's **Digital Personal Data Protection Rules, 2025** (notified on November 13, 2025) into privacy policy analysis.
 
 ## What are the DPDP Rules 2025?
 
@@ -81,7 +81,7 @@ The DPDP Rules 2025 are subordinate legislation enacted under the Digital Person
 - Appeals process and procedures
 - Information request mechanisms (Seventh Schedule)
 
-## How PrivacyHub Uses DPDP Rules 2025
+## How PrivacyAnalyzer Uses DPDP Rules 2025
 
 ### Enhanced Analysis Prompt
 
@@ -236,7 +236,7 @@ Potential improvements to consider:
 
 ## Scientific Methodology Framework
 
-PrivacyHub uses a **scientifically grounded, evidence-based framework** for privacy policy analysis. The methodology is documented in the `/methodology` page and includes:
+PrivacyAnalyzer uses a **scientifically grounded, evidence-based framework** for privacy policy analysis. The methodology is documented in the `/methodology` page and includes:
 
 ### Empirical Weight Justification
 

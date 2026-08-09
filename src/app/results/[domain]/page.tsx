@@ -72,7 +72,7 @@ export default function ResultsPage() {
         setAnalysis(data);
 
         // Update page metadata dynamically
-        document.title = `${domain} - Privacy Grade ${data.analysis_data.privacy_grade} | PrivacyHub`;
+        document.title = `${domain} - Privacy Grade ${data.analysis_data.privacy_grade} | PrivacyAnalyzer`;
 
         const metaDescription = document.querySelector('meta[name="description"]');
         if (metaDescription) {
@@ -83,15 +83,15 @@ export default function ResultsPage() {
 
         // Add OG tags
         const ogTags = [
-          { property: 'og:title', content: `${domain} - Privacy Grade ${data.analysis_data.privacy_grade} | PrivacyHub` },
+          { property: 'og:title', content: `${domain} - Privacy Grade ${data.analysis_data.privacy_grade} | PrivacyAnalyzer` },
           { property: 'og:description', content: `${domain} scored ${data.analysis_data.overall_score}/10 for privacy. ${data.analysis_data.executive_summary}` },
           { property: 'og:type', content: 'website' },
-          { property: 'og:url', content: `https://privacyhub.in/results/${encodeURIComponent(domain)}` },
-          { property: 'og:image', content: data.homepage_screenshot || 'https://privacyhub.in/og-image.png' },
+          { property: 'og:url', content: `https://privacyanalyzer.in/results/${encodeURIComponent(domain)}` },
+          { property: 'og:image', content: data.homepage_screenshot || 'https://privacyanalyzer.in/og-image.png' },
           { name: 'twitter:card', content: 'summary_large_image' },
           { name: 'twitter:title', content: `${domain} - Privacy Grade ${data.analysis_data.privacy_grade}` },
           { name: 'twitter:description', content: `Privacy score: ${data.analysis_data.overall_score}/10` },
-          { name: 'twitter:image', content: data.homepage_screenshot || 'https://privacyhub.in/og-image.png' },
+          { name: 'twitter:image', content: data.homepage_screenshot || 'https://privacyanalyzer.in/og-image.png' },
         ];
 
         ogTags.forEach(tag => {
@@ -158,7 +158,7 @@ export default function ResultsPage() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <Link href="/" className="text-2xl font-bold text-blue-600">
-              PrivacyHub
+              PrivacyAnalyzer
             </Link>
             <Button asChild variant="outline">
               <Link href="/">Analyze Another</Link>

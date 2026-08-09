@@ -1,48 +1,28 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import {
   getRecentAnalyses,
+  getAnalysesCount,
   initializeDatabase,
-  type D1Database
-} from '@/lib/d1-database';
+  isDatabaseConfigured,
+} from '@/lib/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Helper function to get D1 database from Cloudflare Workers environment
-function getD1Database(): D1Database | undefined {
-  if (typeof globalThis !== 'undefined' && (globalThis as any).DB) {
-    return (globalThis as any).DB as D1Database;
-  }
-
-  if (typeof process !== 'undefined' && process.env && (process.env as any).DB) {
-    return (process.env as any).DB as D1Database;
-  }
-
-  const cloudflareEnv = (globalThis as any).env || (globalThis as any).__env;
-  if (cloudflareEnv && cloudflareEnv.DB) {
-    return cloudflareEnv.DB as D1Database;
-  }
-
-  return undefined;
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const db = getD1Database();
-
-    if (!db) {
-      console.log('[History] D1 database not available - returning empty result');
+    if (!isDatabaseConfigured()) {
+      console.log('[History] Database not configured - returning empty result');
       return NextResponse.json({
         analyses: [],
         total: 0,
-        message: 'Database not available. History requires a Cloudflare D1 database binding.'
+        message: 'Database not available. History requires a DATABASE_URL (Postgres) connection.',
       });
     }
 
     // Initialize database schema (idempotent)
     try {
-      await initializeDatabase(db);
+      await initializeDatabase();
     } catch (initError) {
       console.error('[History] Database initialization failed:', initError);
     }
@@ -52,18 +32,9 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '24', 10), 1), 100);
     const offset = Math.max(parseInt(searchParams.get('offset') || '0', 10), 0);
 
-    // Query recent analyses from D1
-    const analyses = await getRecentAnalyses(db, limit, offset);
-
-    // Get total count for pagination
-    let total = 0;
-    try {
-      const countResult = await db.prepare('SELECT COUNT(*) as count FROM analyses').first<{ count: number }>();
-      total = countResult?.count || 0;
-    } catch (countError) {
-      console.error('[History] Failed to get total count:', countError);
-      total = analyses.length;
-    }
+    // Query recent analyses and total count
+    const analyses = await getRecentAnalyses(limit, offset);
+    const total = await getAnalysesCount();
 
     // Transform stored analyses for the response
     const formattedAnalyses = analyses.map((item) => {
@@ -98,7 +69,6 @@ export async function GET(request: NextRequest) {
       offset,
       has_more: offset + limit < total,
     });
-
   } catch (error) {
     console.error('[History] API error:', error);
     return NextResponse.json(

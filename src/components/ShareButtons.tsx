@@ -37,16 +37,16 @@ export function ShareButtons({
   const [copied, setCopied] = useState(false);
 
   // Build share content
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : (url || 'https://privacyhub.in');
+  const shareUrl = typeof window !== 'undefined' ? window.location.href : (url || 'https://privacyanalyzer.in');
 
   // For analysis pages
   const isAnalysisPage = pageType === 'analysis' || (privacyGrade && overallScore);
 
-  let defaultTitle = "PrivacyHub - Privacy Policy Analyzer for India";
+  let defaultTitle = "PrivacyAnalyzer - Privacy Policy Analyzer for India";
   let defaultDescription = "Analyze privacy policies for DPDP Act 2023 compliance. AI-powered privacy analysis helping Indians make informed choices about their data.";
   let emailBodyContent = `I found this helpful resource for understanding privacy policies and DPDP Act 2023 compliance.
 
-PrivacyHub.in is India's first AI-powered privacy policy analyzer. It helps you:
+PrivacyAnalyzer.in is India's first AI-powered privacy policy analyzer. It helps you:
 • Understand complex privacy policies in simple language
 • Check DPDP Act 2023 compliance
 • Make informed decisions about your data
@@ -58,18 +58,18 @@ Check it out: ${shareUrl}`;
     const domain = new URL(url).hostname;
     defaultTitle = privacyGrade && overallScore
       ? `${domain} Privacy Score: ${overallScore}/10 (Grade ${privacyGrade}) - DPDP Act Analysis`
-      : `Privacy Policy Analysis for ${domain} - PrivacyHub.in`;
+      : `Privacy Policy Analysis for ${domain} - PrivacyAnalyzer.in`;
 
-    defaultDescription = `I analyzed ${domain}'s privacy policy using PrivacyHub.in - India's DPDP Act 2023 compliance checker. Check your app's privacy score!`;
+    defaultDescription = `I analyzed ${domain}'s privacy policy using PrivacyAnalyzer.in - India's DPDP Act 2023 compliance checker. Check your app's privacy score!`;
 
-    emailBodyContent = `I just analyzed ${domain}'s privacy policy for DPDP Act 2023 compliance using PrivacyHub.in.
+    emailBodyContent = `I just analyzed ${domain}'s privacy policy for DPDP Act 2023 compliance using PrivacyAnalyzer.in.
 
 ${privacyGrade && overallScore ? `Privacy Grade: ${privacyGrade}
 Overall Score: ${overallScore}/10
 
 ` : ''}Check it out and analyze your favorite apps too: ${shareUrl}
 
-PrivacyHub helps you understand what apps do with your data and how they comply with India's Digital Personal Data Protection Act 2023.`;
+PrivacyAnalyzer helps you understand what apps do with your data and how they comply with India's Digital Personal Data Protection Act 2023.`;
   }
 
   const shareTitle = title || defaultTitle;
@@ -141,7 +141,7 @@ PrivacyHub helps you understand what apps do with your data and how they comply 
                 url={shareUrl}
                 title={shareTitle}
                 summary={defaultDescription}
-                source="PrivacyHub.in"
+                source="PrivacyAnalyzer.in"
               >
                 <div className="flex items-center gap-2 hover:scale-105 transition-transform">
                   <LinkedinIcon size={40} round />

@@ -207,10 +207,10 @@ export default function MethodologyPage() {
             <h3 className="text-2xl font-bold mb-3">📢 Have Questions or Suggestions?</h3>
             <p className="text-blue-100 text-lg max-w-2xl mx-auto mb-6">
               If you think we got something wrong or have ideas to make our analysis better,
-              we want to hear from you! Your feedback makes PrivacyHub better for everyone.
+              we want to hear from you! Your feedback makes PrivacyAnalyzer better for everyone.
             </p>
             <a
-              href="https://github.com/privacypriority/privacyhub/issues"
+              href="https://github.com/privacypriority/privacyanalyzer/issues"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-bold hover:bg-blue-50 transition-colors"

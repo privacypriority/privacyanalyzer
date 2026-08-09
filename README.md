@@ -1,4 +1,4 @@
-# 🔒 PrivacyHub.in - Privacy Policy Analyser
+# 🔒 PrivacyAnalyzer.in - Privacy Policy Analyser
 
 <div align="center">
 
@@ -10,7 +10,7 @@
 
 **India's first AI-powered privacy policy analyzer helping users understand how websites handle their personal data with comprehensive DPDP Act 2023 and DPDP Rules 2025 compliance analysis.**
 
-[🌐 Live Demo](https://privacyhub.in) · [📖 Methodology](https://privacyhub.in/methodology) · [🐛 Report Bug](https://github.com/privacypriority/privacyhub/issues) · [✨ Request Feature](https://github.com/privacypriority/privacyhub/issues)
+[🌐 Live Demo](https://privacyanalyzer.in) · [📖 Methodology](https://privacyanalyzer.in/methodology) · [🐛 Report Bug](https://github.com/privacypriority/privacyanalyzer/issues) · [✨ Request Feature](https://github.com/privacypriority/privacyanalyzer/issues)
 
 </div>
 
@@ -34,16 +34,16 @@
 
 ## 🎯 About
 
-PrivacyHub is a production-ready, AI-powered privacy policy analyzer that empowers users to make informed decisions about their personal data. Using advanced AI models and comprehensive regulatory frameworks, we provide detailed privacy assessments with actionable recommendations.
+PrivacyAnalyzer is a production-ready, AI-powered privacy policy analyzer that empowers users to make informed decisions about their personal data. Using advanced AI models and comprehensive regulatory frameworks, we provide detailed privacy assessments with actionable recommendations.
 
-### Why PrivacyHub?
+### Why PrivacyAnalyzer?
 
 - 🇮🇳 **India-Focused**: First privacy analyzer built specifically for India's DPDP Act 2023 and Rules 2025
 - 📊 **Dual Scoring System**:
   - **Overall Privacy Score** - User-centric evaluation of data protection practices
   - **DPDP Compliance Score** - Regulatory compliance assessment for business owners
 - 🔍 **Evidence-Based Analysis**: Scientific methodology based on DPDP Act 2023, Rules 2025, and international best practices
-- 🤖 **AI-Powered**: DeepSeek Chat model via OpenRouter for sophisticated policy analysis
+- 🤖 **AI-Powered**: OpenRouter models (default `openrouter/free`, with NVIDIA Nemotron and GPT-OSS fallbacks) for sophisticated policy analysis
 - 📈 **Comprehensive Assessment**: 6-category weighted evaluation with 120+ privacy and compliance criteria
 - 🎯 **Complete DPDP Coverage**: Analysis against all 23 Rules and 7 Schedules of DPDP Rules 2025
 - 🎨 **Modern UX**: Intuitive dashboard with visual analytics and category breakdowns
@@ -130,7 +130,7 @@ PrivacyHub is a production-ready, AI-powered privacy policy analyzer that empowe
 
 ## 📐 Analysis Methodology
 
-PrivacyHub uses a scientifically-grounded, evidence-based framework for privacy assessment focused on India's DPDP Act 2023 and DPDP Rules 2025:
+PrivacyAnalyzer uses a scientifically-grounded, evidence-based framework for privacy assessment focused on India's DPDP Act 2023 and DPDP Rules 2025:
 
 ### Dual Scoring System
 
@@ -219,7 +219,7 @@ A privacy policy could score high on regulatory compliance (meets all legal requ
 - **MODERATE-HIGH RISK (4-5)**: Multiple compliance gaps, Data Principal rights compromised
 - **HIGH RISK (1-3)**: Significant DPDP Act violations likely, Data Protection Board action probable
 
-[View Full Methodology](https://privacyhub.in/methodology)
+[View Full Methodology](https://privacyanalyzer.in/methodology)
 
 ---
 
@@ -242,11 +242,11 @@ A privacy policy could score high on regulatory compliance (meets all legal requ
   - Native fetch API (final fallback)
 
 ### Infrastructure
-- **Hosting**: Vercel or Cloudflare Workers (edge deployment)
-- **Database**: Cloudflare D1 (serverless SQL for caching)
-- **CDN**: Vercel Edge Network / Cloudflare CDN
+- **Hosting**: Vercel (Node.js runtime)
+- **Database**: Neon Postgres (serverless SQL for caching + history, via Vercel Marketplace)
+- **CDN**: Vercel Edge Network
 - **Analytics**: Vercel Analytics (optional)
-- **Deployment**: CI/CD via Vercel Git integration or Cloudflare Pages
+- **Deployment**: CI/CD via Vercel Git integration
 
 ### Security & Performance
 - Input validation and URL sanitization
@@ -270,8 +270,8 @@ A privacy policy could score high on regulatory compliance (meets all legal requ
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/privacypriority/privacyhub.git
-   cd privacyhub
+   git clone https://github.com/privacypriority/privacyanalyzer.git
+   cd privacyanalyzer
    ```
 
 2. **Install dependencies**
@@ -328,7 +328,7 @@ See `.env.example` for a comprehensive list of available environment variables w
 ### Project Structure
 
 ```
-privacyhub/
+privacyanalyzer/
 ├── src/
 │   ├── app/                          # Next.js App Router
 │   │   ├── api/
@@ -354,27 +354,21 @@ privacyhub/
 │   │   └── MethodologySection.tsx   # Methodology display
 │   ├── lib/
 │   │   ├── input-validation.ts      # URL validation and sanitization
-│   │   ├── d1-database.ts           # Cloudflare D1 database integration
+│   │   ├── db.ts                    # Neon Postgres integration (cache + history)
 │   │   └── openrouter-key-manager.ts # API key rotation
-│   ├── types/
-│   │   └── cloudflare.d.ts          # Cloudflare Workers type definitions
 │   └── middleware.ts                # Security headers
 ├── docs/
 │   └── regulations/
 │       ├── DPDP_Rules_2025.pdf      # DPDP Rules 2025 full text (2.5 MB)
 │       └── DPDP_RULES_2025_INTEGRATION.md  # Integration guide
-├── migrations/
-│   └── 0001_initial_schema.sql      # D1 database schema for caching
 ├── public/
 │   ├── favicon.ico                  # Favicon (all sizes)
 │   ├── robots.txt                   # Search engine directives
 │   └── site.webmanifest             # PWA manifest
-├── .env.example                     # Environment variable template
+├── .env.local                       # Environment variables (gitignored)
 ├── next.config.ts                   # Next.js configuration
-├── tailwind.config.ts               # Tailwind CSS configuration
-├── wrangler.toml                    # Cloudflare Workers configuration
 ├── vercel.json                      # Vercel deployment config
-├── DEPLOYMENT.md                    # Deployment guide (Vercel + Cloudflare)
+├── DEPLOYMENT.md                    # Deployment guide (Vercel + Neon)
 └── package.json                     # Dependencies and scripts
 ```
 
@@ -472,12 +466,12 @@ We welcome contributions from the community! Here's how you can help:
 
 ### Ways to Contribute
 
-- 🐛 **Report Bugs**: [Open an issue](https://github.com/privacypriority/privacyhub/issues/new)
-- ✨ **Request Features**: [Submit a feature request](https://github.com/privacypriority/privacyhub/issues/new)
+- 🐛 **Report Bugs**: [Open an issue](https://github.com/privacypriority/privacyanalyzer/issues/new)
+- ✨ **Request Features**: [Submit a feature request](https://github.com/privacypriority/privacyanalyzer/issues/new)
 - 📝 **Improve Documentation**: Fix typos, add examples, clarify instructions
 - 💻 **Submit Code**: Fix bugs, add features, improve performance
 - 🎨 **Design**: Improve UI/UX, create graphics, enhance accessibility
-- 🌍 **Translate**: Help make PrivacyHub multilingual
+- 🌍 **Translate**: Help make PrivacyAnalyzer multilingual
 
 ### Development Workflow
 
@@ -507,14 +501,18 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 1. **Import Repository**
    - Connect to GitHub in Vercel Dashboard
-   - Import the privacyhub repository
+   - Import the privacyanalyzer repository
 
-2. **Configure Environment Variables**
-   - Add `OPENROUTER_API` (required)
+2. **Add a Database**
+   - Provision **Neon Postgres** from the Vercel Marketplace (**Storage → Create → Neon**)
+   - `DATABASE_URL` / `POSTGRES_URL` are injected automatically
+
+3. **Configure Environment Variables**
+   - Add `OPENROUTER_API_0` (required — default AI key)
    - Add `FIRECRAWL_API_KEY` (optional)
    - Mark as "Sensitive" in Vercel settings
 
-3. **Deploy**
+4. **Deploy**
    ```bash
    vercel --prod
    ```
@@ -524,48 +522,14 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 - CORS headers configured
 - Automatic HTTPS
 
-### Cloudflare Workers (Edge Deployment)
-
-Blazing-fast edge deployment with global distribution and D1 database caching.
-
-1. **Prerequisites**
-   - Cloudflare account
-   - Wrangler CLI: `npm install -g wrangler`
-
-2. **Create D1 Database**
-   ```bash
-   wrangler d1 create privacyhub
-   # Copy the database_id and update wrangler.toml
-   ```
-
-3. **Run Migrations**
-   ```bash
-   wrangler d1 execute privacyhub --file=./migrations/0001_initial_schema.sql
-   ```
-
-4. **Configure Secrets**
-   ```bash
-   wrangler secret put OPENROUTER_API
-   wrangler secret put FIRECRAWL_API_KEY  # Optional
-   ```
-
-5. **Deploy**
-   ```bash
-   npm run build:cf && wrangler deploy
-   ```
-
-**Cloudflare Benefits**:
-- Global edge network with <50ms latency
-- D1 database for analysis result caching
-- Automatic scaling and DDoS protection
-- Cost-effective for high traffic
+The database schema is created automatically on first use — no migration step required.
 
 See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
 
 ### Self-Hosting
 
 Requirements:
-- Node.js 18+ server
+- Node.js 22+ server
 - Process manager (PM2 recommended)
 - Reverse proxy (nginx/Apache)
 - SSL certificate
@@ -578,7 +542,7 @@ npm install -g pm2
 npm run build
 
 # Start with PM2
-pm2 start npm --name "privacyhub" -- start
+pm2 start npm --name "privacyanalyzer" -- start
 
 # Configure nginx reverse proxy
 # Point to localhost:3000
@@ -618,7 +582,7 @@ pm2 start npm --name "privacyhub" -- start
 - [ ] Custom compliance frameworks
 - [ ] Enterprise features (teams, SSO)
 
-See [Issues](https://github.com/privacypriority/privacyhub/issues) for detailed feature requests.
+See [Issues](https://github.com/privacypriority/privacyanalyzer/issues) for detailed feature requests.
 
 ---
 
@@ -661,9 +625,9 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## 📬 Contact & Support
 
-- **Website**: [privacyhub.in](https://privacyhub.in)
-- **GitHub**: [Issues](https://github.com/privacypriority/privacyhub/issues) | [Discussions](https://github.com/privacypriority/privacyhub/discussions)
-- **Methodology**: [View Analysis Framework](https://privacyhub.in/methodology)
+- **Website**: [privacyanalyzer.in](https://privacyanalyzer.in)
+- **GitHub**: [Issues](https://github.com/privacypriority/privacyanalyzer/issues) | [Discussions](https://github.com/privacypriority/privacyanalyzer/discussions)
+- **Methodology**: [View Analysis Framework](https://privacyanalyzer.in/methodology)
 
 ---
 
@@ -671,7 +635,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 If you find this project useful, please consider giving it a star! It helps the project grow and reach more users who care about privacy.
 
-[![Star History Chart](https://api.star-history.com/svg?repos=privacypriority/privacyhub&type=Date)](https://star-history.com/#privacypriority/privacyhub&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=privacypriority/privacyanalyzer&type=Date)](https://star-history.com/#privacypriority/privacyanalyzer&Date)
 
 ---
 
@@ -679,6 +643,6 @@ If you find this project useful, please consider giving it a star! It helps the 
 
 **Made with ❤️ for privacy awareness**
 
-[⬆ Back to Top](#-privacyhubin---privacy-policy-analyser)
+[⬆ Back to Top](#-privacyanalyzerin---privacy-policy-analyser)
 
 </div>

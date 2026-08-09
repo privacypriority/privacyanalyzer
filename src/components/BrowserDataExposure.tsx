@@ -240,7 +240,7 @@ export function BrowserDataExposure() {
                   <li>✅ All analysis happens <strong>locally in your browser only</strong></li>
                   <li>✅ Data is <strong>immediately discarded when you close this tab</strong></li>
                   <li>✅ <strong>No server communication</strong> - everything stays on your device</li>
-                  <li>✅ <strong>No cookies, tracking, or data storage</strong> by PrivacyHub</li>
+                  <li>✅ <strong>No cookies, tracking, or data storage</strong> by PrivacyAnalyzer</li>
                 </ul>
               </div>
               <p className="text-sm text-orange-700">

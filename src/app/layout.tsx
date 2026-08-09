@@ -28,13 +28,13 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://privacyhub.in'),
-  title: "Privacy Policy Analyser for India | PrivacyHub.in - DPDP Act 2023 Compliance",
+  metadataBase: new URL('https://privacyanalyzer.in'),
+  title: "Privacy Policy Analyser for India | PrivacyAnalyzer.in - DPDP Act 2023 Compliance",
   description: "India's first DPDP Act 2023 compliance checker. Analyze privacy policies of Indian apps and websites for Digital Personal Data Protection Act compliance. AI-powered privacy analysis for Indian users.",
   keywords: "privacy policy analyser India, DPDP Act 2023 compliance, data privacy India, personal data protection India, Indian privacy law, digital privacy India, privacy education India, Data Protection Board, Data Fiduciary, Data Principal rights, privacy policy checker India, data security India",
-  authors: [{ name: "PrivacyHub.in" }],
-  creator: "PrivacyHub.in",
-  publisher: "PrivacyHub.in",
+  authors: [{ name: "PrivacyAnalyzer.in" }],
+  creator: "PrivacyAnalyzer.in",
+  publisher: "PrivacyAnalyzer.in",
   icons: {
     icon: [
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
@@ -53,16 +53,16 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://privacyhub.in",
-    siteName: "PrivacyHub.in",
+    url: "https://privacyanalyzer.in",
+    siteName: "PrivacyAnalyzer.in",
     title: "Privacy Policy Analyser for India | DPDP Act 2023 Compliance",
     description: "India's first DPDP Act 2023 compliance checker. Analyze privacy policies for Digital Personal Data Protection Act compliance. AI-powered privacy analysis for Indian users.",
     images: [
       {
-        url: 'https://privacyhub.in/android-chrome-512x512.png',
+        url: 'https://privacyanalyzer.in/android-chrome-512x512.png',
         width: 512,
         height: 512,
-        alt: 'PrivacyHub - India Privacy Policy Analyser for DPDP Act 2023',
+        alt: 'PrivacyAnalyzer - India Privacy Policy Analyser for DPDP Act 2023',
         type: 'image/png',
       }
     ],
@@ -70,11 +70,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "@privacyhubin",
-    creator: "@privacyhubin",
+    site: "@privacyanalyzerin",
+    creator: "@privacyanalyzerin",
     title: "Privacy Policy Analyser for India | DPDP Act 2023",
     description: "India's first DPDP Act 2023 compliance checker. Analyze privacy policies for Digital Personal Data Protection Act compliance. AI-powered analysis for Indian users.",
-    images: ['https://privacyhub.in/android-chrome-512x512.png'],
+    images: ['https://privacyanalyzer.in/android-chrome-512x512.png'],
   },
   robots: {
     index: true,
@@ -88,7 +88,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://privacyhub.in',
+    canonical: 'https://privacyanalyzer.in',
   },
   category: 'technology',
   classification: 'Privacy Analysis Tools',
@@ -109,9 +109,9 @@ export default function RootLayout({
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    "name": "PrivacyHub.in",
+    "name": "PrivacyAnalyzer.in",
     "description": "India's first DPDP Act 2023 compliance checker. Analyze privacy policies for Digital Personal Data Protection Act compliance.",
-    "url": "https://privacyhub.in",
+    "url": "https://privacyanalyzer.in",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Web Browser",
     "offers": {
@@ -126,8 +126,8 @@ export default function RootLayout({
     },
     "author": {
       "@type": "Organization",
-      "name": "PrivacyHub.in",
-      "url": "https://privacyhub.in"
+      "name": "PrivacyAnalyzer.in",
+      "url": "https://privacyanalyzer.in"
     }
   };
 
