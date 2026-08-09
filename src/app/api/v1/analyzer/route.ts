@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OpenRouter } from '@openrouter/sdk';
 import FirecrawlApp from '@mendable/firecrawl-js';
 import { validateUrl } from '@/lib/input-validation';
-import { hasNodeJSRuntime } from '@/lib/platform-detector';
 
 // Convert raw HTML to plain text
 function htmlToText(html: string): string {
@@ -63,7 +62,7 @@ function smartTruncate(content: string, maxLength: number): string {
   return content.substring(0, maxLength);
 }
 
-// Runtime configuration - Node.js for Playwright support and longer timeouts
+// Runtime configuration - Node.js runtime and longer timeouts
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -121,84 +120,6 @@ async function scrapeWithFetch(url: string): Promise<string> {
   }
 }
 
-// Crawlee PlaywrightCrawler fallback
-// Only available in Node.js runtime, not in Edge Runtime
-async function scrapeWithCrawlee(url: string): Promise<string> {
-  // Check if we're running in Node.js environment with Playwright support
-  if (!hasNodeJSRuntime()) {
-    throw new Error('Playwright is not available in Edge Runtime. Use Firecrawl or fetch fallback instead.');
-  }
-
-  let extractedContent = '';
-
-  try {
-    // Dynamic import of Playwright to avoid loading in Edge Runtime
-    const { PlaywrightCrawler } = await import('@crawlee/playwright');
-
-    const crawler = new PlaywrightCrawler({
-      maxRequestsPerCrawl: 1,
-      headless: true,
-      navigationTimeoutSecs: 30,
-      launchContext: {
-        launchOptions: {
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-          ],
-        },
-      },
-      browserPoolOptions: {
-        useFingerprints: true,
-        fingerprintOptions: {
-          fingerprintGeneratorOptions: {
-            browsers: [{ name: 'chrome', minVersion: 120 }],
-            devices: ['desktop'],
-            operatingSystems: ['windows'],
-          },
-        },
-      },
-      async requestHandler({ page, request }) {
-        console.log(`Crawling: ${request.url}`);
-        await page.waitForLoadState('domcontentloaded');
-        await page.waitForTimeout(2000);
-
-        extractedContent = await page.evaluate(() => {
-          const elementsToRemove = document.querySelectorAll('script, style, noscript, svg, iframe, nav, header, footer, aside, [role="navigation"], [role="banner"], [role="complementary"]');
-          elementsToRemove.forEach(el => el.remove());
-
-          const selectors = [
-            'main', '[role="main"]', '.main-content', '#main-content',
-            '.content', '#content', '.privacy-policy', '.policy-content',
-            'article', '.article-content', '.post-content', '.entry-content',
-            '.container', 'body'
-          ];
-
-          for (const selector of selectors) {
-            const element = document.querySelector(selector);
-            if (element && element.textContent && element.textContent.trim().length > 500) {
-              return element.textContent.trim();
-            }
-          }
-
-          return document.body.textContent?.trim() || '';
-        });
-      },
-      failedRequestHandler({ request }) {
-        console.error(`Request ${request.url} failed multiple times`);
-      },
-    });
-
-    await crawler.run([url]);
-    await crawler.teardown();
-
-    return extractedContent;
-  } catch (error) {
-    console.error('Crawlee scraping failed:', error);
-    throw error;
-  }
-}
 
 const PRIVACY_ANALYSIS_PROMPT = `
 You are a certified privacy policy expert with expertise in GDPR, CCPA, DPDP Act 2023 (India), PIPEDA, and international data protection frameworks. Conduct a comprehensive privacy impact assessment using evidence-based evaluation criteria.
@@ -404,24 +325,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fallback to Crawlee
+    // Fallback to a simple fetch if Firecrawl failed or no API key is configured
     if (!content || content.length < 100) {
-      console.log('[API v1] Falling back to Crawlee...');
-      try {
-        content = await scrapeWithCrawlee(sanitizedUrl);
-        scraperUsed = 'crawlee';
-
-        if (!content || content.length < 100) {
-          throw new Error('Insufficient content');
-        }
-
-        console.log('[API v1] Crawlee success, length:', content.length);
-
-      } catch (crawleeError) {
-        console.error('[API v1] Crawlee failed:', crawleeError);
-
-        // Final fallback: fetch
-        console.log('[API v1] Falling back to fetch...');
+      console.log('[API v1] Falling back to fetch...');
+      {
         try {
           content = await scrapeWithFetch(sanitizedUrl);
           scraperUsed = 'fetch';

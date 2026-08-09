@@ -13,12 +13,8 @@ import {
   isDatabaseConfigured,
   type AnalysisData,
 } from '@/lib/db';
-import { detectPlatform, hasNodeJSRuntime, getPlatformDescription } from '@/lib/platform-detector';
 
-// Runtime configuration
-// Use Node.js runtime for better compatibility and Playwright support
-// This works on Vercel (serverless functions) and provides full scraping capabilities
-// For Cloudflare Workers deployment, the build process handles runtime adaptation
+// Runtime configuration — Node.js runtime on Vercel for scraping support
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // 60 seconds max execution time (Vercel Pro)
@@ -123,7 +119,7 @@ function smartTruncate(content: string, maxLength: number): string {
   return content.substring(0, maxLength);
 }
 
-// Simple fetch fallback when Playwright is not available
+// Simple fetch fallback
 async function scrapeWithFetch(url: string): Promise<string> {
   try {
     const response = await fetch(url, {
@@ -158,189 +154,6 @@ async function scrapeWithFetch(url: string): Promise<string> {
   }
 }
 
-// Crawlee PlaywrightCrawler fallback scraper with anti-blocking features
-// Only available in Node.js runtime, not in Edge Runtime
-async function scrapeWithCrawlee(url: string, captureScreenshot: boolean = false): Promise<{ content: string; screenshot?: string }> {
-  // Check if we're running in Node.js environment with Playwright support
-  if (!hasNodeJSRuntime()) {
-    throw new Error('Playwright is not available in Edge Runtime. Use Firecrawl or fetch fallback instead.');
-  }
-
-  let extractedContent = '';
-  let screenshotBase64 = '';
-  let lastError: Error | null = null;
-
-  try {
-    // Dynamic import of Playwright to avoid loading in Edge Runtime
-    const { PlaywrightCrawler } = await import('@crawlee/playwright');
-
-    const crawler = new PlaywrightCrawler({
-      // Limit to single request for privacy policy extraction
-      maxRequestsPerCrawl: 1,
-
-      // Headless mode for production
-      headless: true,
-
-      // Navigation timeout (30 seconds)
-      navigationTimeoutSecs: 30,
-
-      // Browser pool configuration with anti-blocking fingerprints
-      browserPoolOptions: {
-        // Enable browser fingerprinting (enabled by default, but explicit for clarity)
-        useFingerprints: true,
-        // Configure fingerprint generation for maximum stealth
-        fingerprintOptions: {
-          fingerprintGeneratorOptions: {
-            // Emulate recent Chrome on Windows desktop
-            browsers: [
-              {
-                name: 'chrome' as const,
-                minVersion: 120,
-              },
-            ],
-            devices: ['desktop' as const],
-            operatingSystems: ['windows' as const],
-            locales: ['en-US', 'en'],
-          },
-        },
-      },
-
-      // Browser launch options for Cloudflare Workers compatibility
-      launchContext: {
-        launchOptions: {
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-          ],
-        },
-      },
-
-      // Session pool for better request management
-      sessionPoolOptions: {
-        maxPoolSize: 1, // Single session for single request
-        sessionOptions: {
-          maxUsageCount: 1,
-        },
-      },
-
-      // Post-navigation hook to wait for dynamic content
-      postNavigationHooks: [
-        async ({ page, log }) => {
-          log.info('Waiting for page content to load...');
-          // Wait for network to be mostly idle
-          try {
-            await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-            // Additional wait for dynamic content
-            await page.waitForTimeout(2000);
-          } catch {
-            log.warning('Timeout waiting for page load state, proceeding anyway');
-          }
-        },
-      ],
-
-      // Request handler - Crawlee automatically manages browser lifecycle
-      async requestHandler({ page, request, log }) {
-        log.info(`Extracting content from: ${request.loadedUrl}`);
-
-        // Capture screenshot if requested
-        if (captureScreenshot) {
-          try {
-            log.info('Capturing screenshot...');
-            const screenshot = await page.screenshot({
-              fullPage: true,
-              type: 'png',
-            });
-            screenshotBase64 = `data:image/png;base64,${screenshot.toString('base64')}`;
-            log.info('Screenshot captured successfully');
-          } catch (screenshotError) {
-            const errorMsg = screenshotError instanceof Error ? screenshotError.message : String(screenshotError);
-            log.warning(`Failed to capture screenshot: ${errorMsg}`);
-            // Non-critical, continue with content extraction
-          }
-        }
-
-        // Extract main content text using Playwright's page.evaluate
-        try {
-          extractedContent = await page.evaluate(() => {
-            // Remove unnecessary elements
-            const elementsToRemove = document.querySelectorAll(
-              'script, style, noscript, svg, iframe, nav, header, footer, aside, [role="navigation"], [role="banner"], [role="complementary"], .advertisement, .ads'
-            );
-            elementsToRemove.forEach(el => el.remove());
-
-            // Try to find main content areas in order of priority
-            const selectors = [
-              'main',
-              '[role="main"]',
-              '.main-content',
-              '#main-content',
-              '.content',
-              '#content',
-              '.privacy-policy',
-              '.policy-content',
-              'article',
-              '.article-content',
-              '.post-content',
-              '.entry-content',
-              '.page-content',
-              '.container',
-              'body'
-            ];
-
-            for (const selector of selectors) {
-              const element = document.querySelector(selector);
-              if (element && element.textContent && element.textContent.trim().length > 500) {
-                return element.textContent.trim();
-              }
-            }
-
-            // Fallback to body text
-            return document.body.textContent?.trim() || '';
-          });
-
-          log.info(`Content extracted successfully, length: ${extractedContent.length}`);
-        } catch (evalError) {
-          const errorMsg = evalError instanceof Error ? evalError.message : String(evalError);
-          log.error(`Failed to extract content from page: ${errorMsg}`);
-          throw evalError;
-        }
-      },
-
-      // Error handler for failed requests
-      failedRequestHandler({ request, log }, error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        log.error(`Request ${request.url} failed after retries: ${errorMsg}`);
-        lastError = error instanceof Error ? error : new Error(String(error));
-      },
-
-      // Maximum retries for failed requests
-      maxRequestRetries: 2,
-
-      // Request timeout
-      requestHandlerTimeoutSecs: 60,
-    });
-
-    // Run the crawler on the URL
-    await crawler.run([url]);
-
-    // Clean up browser resources
-    await crawler.teardown();
-
-    if (!extractedContent && lastError) {
-      throw lastError;
-    }
-
-    return {
-      content: extractedContent,
-      screenshot: screenshotBase64 || undefined,
-    };
-  } catch (error) {
-    console.error('Crawlee scraping failed:', error);
-    throw error;
-  }
-}
 
 const PRIVACY_ANALYSIS_PROMPT = `
 You are a certified privacy policy expert specializing in India's Digital Personal Data Protection Act (DPDP Act) 2023 and the Digital Personal Data Protection Rules 2025. Conduct a comprehensive privacy impact assessment focused on Indian data protection requirements and user rights under both the Act and the Rules.
@@ -486,10 +299,6 @@ Provide your response in this JSON format:
 
 export async function POST(request: NextRequest) {
   try {
-    // Detect platform and log capabilities
-    const platform = detectPlatform();
-    const platformDesc = getPlatformDescription();
-    console.log(`[Platform] Running on: ${platformDesc}`);
     console.log('Privacy analysis request received');
 
     // Rate limiting disabled for MVP
@@ -655,39 +464,15 @@ export async function POST(request: NextRequest) {
         const errorMsg = firecrawlError instanceof Error ? firecrawlError.message : String(firecrawlError);
         console.error('[Firecrawl] Failed:', errorMsg);
         console.error('[Firecrawl] Full error:', firecrawlError);
-        content = ''; // Reset content to trigger Crawlee fallback
+        content = ''; // Reset content to trigger fetch fallback
       }
     } else {
-      console.log('FIRECRAWL_API_KEY not found, will use Crawlee PlaywrightCrawler directly');
+      console.log('FIRECRAWL_API_KEY not found, will use direct fetch fallback');
     }
 
-    // Fallback to Crawlee if Firecrawl failed or API key not available
-    // Note: Playwright only works in Node.js runtime, not Edge Runtime
+    // Fallback to a simple fetch if Firecrawl failed or no API key is configured
     if (!content || content.length < 100) {
-      // Try Playwright/Crawlee only if Node.js APIs are available
-      if (platform.hasNodeAPIs) {
-        console.log('Falling back to Crawlee PlaywrightCrawler...');
-        try {
-          const crawleeResult = await scrapeWithCrawlee(sanitizedUrl);
-          content = crawleeResult.content;
-          scraperUsed = 'crawlee';
-
-          if (!content || content.length < 100) {
-            throw new Error('Crawlee returned insufficient content');
-          }
-
-          console.log('Content extracted successfully with Crawlee, length:', content.length);
-
-        } catch (crawleeError) {
-          const crawleeErrorMsg = crawleeError instanceof Error ? crawleeError.message : String(crawleeError);
-          console.error('Crawlee fallback failed:', crawleeErrorMsg);
-        }
-      } else {
-        console.log('[Platform] Playwright/Crawlee not available in Edge Runtime, skipping to fetch fallback');
-      }
-
-      // Final fallback: simple fetch (if Crawlee failed or wasn't available)
-      if (!content || content.length < 100) {
+      {
         console.log('Falling back to simple fetch...');
         try {
           content = await scrapeWithFetch(sanitizedUrl);
@@ -696,7 +481,7 @@ export async function POST(request: NextRequest) {
           if (!content || content.length < 100) {
             return NextResponse.json({
               error: 'Unable to extract content from this website. The site may have anti-bot protection or require JavaScript rendering that prevents automated access. Please try a different privacy policy URL or contact the website owner for access.',
-              details: 'All scraping methods (Firecrawl, Playwright, Fetch) failed to extract sufficient content.',
+              details: 'Both scraping methods (Firecrawl and direct fetch) failed to extract sufficient content.',
               url: sanitizedUrl
             }, { status: 400 });
           }
@@ -722,7 +507,7 @@ export async function POST(request: NextRequest) {
 
           return NextResponse.json({
             error: userMessage,
-            details: 'Failed to extract content using all available methods (Firecrawl, Playwright browser automation, and direct fetch).',
+            details: 'Failed to extract content using all available methods (Firecrawl and direct fetch).',
             url: sanitizedUrl
           }, { status: 400 });
         }
@@ -879,40 +664,9 @@ export async function POST(request: NextRequest) {
           url: homepageUrl,
           hasApiKey: !!FIRECRAWL_API_KEY
         });
-        console.log('[Screenshot] Will try Crawlee fallback...');
       }
     } else {
-      console.log('[Screenshot] FIRECRAWL_API_KEY not available, skipping Firecrawl screenshot attempt');
-      console.log('[Screenshot] Will try Crawlee fallback directly...');
-    }
-
-    // Fallback to Crawlee for screenshot if Firecrawl failed or not available
-    if (!homepageScreenshot) {
-      try {
-        console.log('[Screenshot] Attempting to capture homepage screenshot with Crawlee Playwright...');
-        console.log('[Screenshot] Note: This may fail on Vercel if Playwright binaries are not installed');
-        const crawleeResult = await scrapeWithCrawlee(homepageUrl, true);
-        console.log('[Screenshot] Crawlee result keys:', Object.keys(crawleeResult));
-        console.log('[Screenshot] Has screenshot:', !!crawleeResult.screenshot);
-
-        if (crawleeResult.screenshot) {
-          homepageScreenshot = crawleeResult.screenshot;
-          console.log('[Screenshot] ✓ Captured successfully with Crawlee');
-          console.log('[Screenshot] Screenshot size:', crawleeResult.screenshot.length, 'chars');
-          console.log('[Screenshot] Screenshot preview:', crawleeResult.screenshot.substring(0, 50) + '...');
-        } else {
-          console.log('[Screenshot] ✗ Crawlee returned no screenshot (screenshot field missing or empty)');
-        }
-      } catch (screenshotError) {
-        // Non-blocking: Log error but continue with analysis
-        const errorMsg = screenshotError instanceof Error ? screenshotError.message : String(screenshotError);
-        const errorStack = screenshotError instanceof Error ? screenshotError.stack : undefined;
-        console.error('[Screenshot] ✗ Crawlee screenshot failed:', {
-          error: errorMsg,
-          stack: errorStack?.substring(0, 200),
-          url: homepageUrl
-        });
-      }
+      console.log('[Screenshot] FIRECRAWL_API_KEY not available, skipping screenshot capture');
     }
 
     // Final screenshot status
@@ -920,7 +674,7 @@ export async function POST(request: NextRequest) {
       console.log('[Screenshot] ✓ Screenshot ready for response (length:', homepageScreenshot.length, ')');
     } else {
       console.warn('[Screenshot] ⚠️  No screenshot available - analysis will proceed without homepage preview');
-      console.log('[Screenshot] Possible reasons: Firecrawl API limit, Playwright not available on Vercel, or site blocking screenshots');
+      console.log('[Screenshot] Possible reasons: Firecrawl API limit or site blocking screenshots');
     }
 
     console.log('Analyzing privacy policy with AI...');
