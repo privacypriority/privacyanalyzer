@@ -149,9 +149,9 @@ export default function DigitalFingerprintPage() {
               </div>
 
               <div className="bg-gradient-to-br from-yellow-50 to-amber-50 p-6 rounded-xl border border-yellow-200">
-                <h4 className="text-lg font-bold text-yellow-900 mb-3">Battery API Tracking</h4>
+                <h4 className="text-lg font-bold text-yellow-900 mb-3">Client Hints &amp; Audio</h4>
                 <p className="text-sm text-yellow-800 leading-relaxed">
-                  Monitors your device&apos;s battery level and charging status. This seemingly innocent data can be used to track you across websites.
+                  User-Agent Client Hints expose your exact OS, CPU architecture and browser build, while the audio stack renders a stable per-device hash — both hard to hide.
                 </p>
               </div>
 
@@ -239,9 +239,9 @@ export default function DigitalFingerprintPage() {
               </div>
 
               <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border border-purple-200">
-                <div className="text-4xl font-black text-purple-600 mb-2">500+</div>
-                <div className="text-sm font-semibold text-purple-800">Data Points</div>
-                <div className="text-xs text-purple-700 mt-2">Collected per session</div>
+                <div className="text-4xl font-black text-purple-600 mb-2">~33 bits</div>
+                <div className="text-sm font-semibold text-purple-800">Uniquely Identifies You</div>
+                <div className="text-xs text-purple-700 mt-2">Enough to single out 1 person on Earth</div>
               </div>
 
               <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">

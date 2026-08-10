@@ -31,64 +31,93 @@ interface DataCategory {
   description: string;
 }
 
+// SHA-256 hex of a string (Web Crypto).
+async function sha256Hex(str: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Approximate bits of identifying entropy per signal, grounded in published
+// fingerprinting research (EFF Panopticlick / AmIUnique). Used to estimate how
+// identifying a browser is — NOT a made-up percentage.
+const ENTROPY_BITS: Record<string, number> = {
+  canvas: 8.5,        // canvas render hash
+  webgl: 7,           // GPU vendor/renderer + params
+  audio: 5.4,         // audio-stack hash
+  fonts: 8.5,         // installed-font set
+  userAgent: 10,      // UA string
+  clientHints: 3,     // high-entropy UA client hints (extra over UA)
+  screen: 4.8,        // resolution + color/pixel depth + DPR
+  timezone: 3.0,      // IANA timezone
+  languages: 2.5,     // accept-languages
+  hardwareConcurrency: 2, // CPU cores
+  deviceMemory: 1.5,  // capped device memory
+  platform: 2,        // OS/platform
+  voices: 4,          // speechSynthesis voice list
+  mediaPrefs: 1.5,    // prefers-color-scheme / reduced-motion / contrast
+  touch: 0.8,         // touch support / maxTouchPoints
+};
+
 export function DigitalFingerprintProfessional() {
   const [browserData, setBrowserData] = useState<Record<string, Record<string, unknown>> | null>(null);
   const [fingerprintHash, setFingerprintHash] = useState<string>('');
   const [uniquenessScore, setUniquenessScore] = useState<number>(0);
+  const [entropyBits, setEntropyBits] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [showDetails, setShowDetails] = useState(true);
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['identity', 'language', 'screen', 'hardware', 'network', 'media', 'storage', 'features', 'privacy', 'fingerprinting', 'fonts', 'performance', 'advanced']));
 
-  // Enhanced fingerprint hash generation
+  // Stable fingerprint hash: combine only signals that don't change between page
+  // loads or window resizes, so the ID is consistent across visits.
   const generateFingerprint = useCallback(async (data: Record<string, Record<string, unknown>>) => {
-    const fingerprintString = JSON.stringify(data);
-    const encoder = new TextEncoder();
-    const dataBuffer = encoder.encode(fingerprintString);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
+    const fp = data.fingerprinting || {};
+    const stable = [
+      data.identity?.userAgent, data.identity?.platform, data.identity?.uaFullVersion,
+      data.language?.timezone, data.language?.allLanguages,
+      data.screen?.resolution, data.screen?.colorDepth, data.screen?.pixelDepth, data.screen?.devicePixelRatio,
+      data.hardware?.cpuCores, data.hardware?.deviceMemory, data.hardware?.maxTouchPoints,
+      fp.canvasFingerprint, fp.webGLVendor, fp.webGLRenderer, fp.audioContext,
+      data.fonts?.availableFonts, data.fonts?.fontFingerprint,
+      data.media?.speechVoices, data.privacy?.colorScheme,
+    ].map(v => String(v ?? '')).join('|');
+    return sha256Hex(stable);
   }, []);
 
-  // Calculate uniqueness score based on entropy
-  const calculateUniquenessScore = useCallback((data: Record<string, Record<string, unknown>>) => {
-    let totalPoints = 0;
-    let uniquePoints = 0;
-
-    // Weights for different categories
-    const weights: Record<string, number> = {
-      identity: 3,
-      screen: 2,
-      fingerprinting: 4,
-      fonts: 3,
-      hardware: 2,
-      language: 1,
-      network: 1,
-      media: 1,
-      storage: 1,
-      features: 1,
-      privacy: 1,
-      performance: 1,
-      advanced: 3
+  // Estimate identifying entropy (bits) from the signals actually measured, using
+  // research-based per-signal entropy. A signal only counts if it produced a real,
+  // distinguishing value (not blocked / N/A / a browser-frozen default).
+  const calculateEntropy = useCallback((data: Record<string, Record<string, unknown>>) => {
+    const isReal = (v: unknown) => {
+      const s = String(v ?? '').toLowerCase();
+      return s !== '' && !['n/a', 'unknown', 'none', 'blocked or unavailable', 'not available',
+        'not exposed (deprecated)', 'not tested', 'not detectable', 'not set', 'false', '0'].includes(s);
     };
-
-    Object.entries(data).forEach(([category, values]) => {
-      const weight = weights[category] || 1;
-      const points = Object.keys(values).length * weight;
-      totalPoints += points;
-
-      // Check for unique/identifying values
-      Object.values(values).forEach((value) => {
-        const strValue = String(value);
-        if (strValue !== 'N/A' && strValue !== 'Unknown' && strValue !== 'false' && strValue !== '0') {
-          uniquePoints += weight;
-        }
-      });
-    });
-
-    // Calculate score as percentage (inverted - higher means more unique/trackable)
-    return Math.min(100, Math.round((uniquePoints / totalPoints) * 100));
+    const fp = data.fingerprinting || {};
+    const present: Record<string, boolean> = {
+      canvas: isReal(fp.canvasFingerprint),
+      webgl: isReal(fp.webGLRenderer),
+      audio: isReal(fp.audioContext),
+      fonts: isReal(data.fonts?.availableFonts) && String(data.fonts?.availableFonts).includes('detected'),
+      userAgent: isReal(data.identity?.userAgent),
+      clientHints: isReal(data.identity?.uaFullVersion) || isReal(data.identity?.uaModel),
+      screen: isReal(data.screen?.resolution),
+      timezone: isReal(data.language?.timezone),
+      languages: isReal(data.language?.allLanguages),
+      hardwareConcurrency: isReal(data.hardware?.cpuCores),
+      deviceMemory: isReal(data.hardware?.deviceMemory),
+      platform: isReal(data.identity?.platform),
+      voices: isReal(data.media?.speechVoices) && String(data.media?.speechVoices).includes('voice'),
+      mediaPrefs: isReal(data.privacy?.colorScheme),
+      touch: String(data.hardware?.touchSupport) === 'true' || Number(data.hardware?.maxTouchPoints) > 0,
+    };
+    let bits = 0;
+    for (const [k, ok] of Object.entries(present)) if (ok) bits += ENTROPY_BITS[k] || 0;
+    // These signals are correlated, so their marginal entropies can't simply be
+    // summed. Apply a correlation discount so a fully-exposed browser lands in the
+    // ~20-24 bit range that real-world studies (Panopticlick / AmIUnique) observe.
+    const CORRELATION_DISCOUNT = 0.35;
+    return Math.round(bits * CORRELATION_DISCOUNT * 10) / 10;
   }, []);
 
   const collectBrowserData = useCallback(async () => {
@@ -268,7 +297,7 @@ export function DigitalFingerprintProfessional() {
         battery: 'N/A',
         chargingStatus: 'N/A',
         pdfViewer: 'N/A',
-        mathMLSupport: document.implementation.hasFeature('http://www.w3.org/TR/SVG11/feature#BasicStructure', '1.1'),
+        mathMLSupport: 'MathMLElement' in window,
         cssMediaQueries: 'matchMedia' in window,
         touchEventSupport: 'TouchEvent' in window,
         hardwareConcurrency: navigator.hardwareConcurrency || 'N/A',
@@ -313,7 +342,9 @@ export function DigitalFingerprintProfessional() {
         ctx.fillText('Canvas fingerprint 🌐', 2, 15);
         ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
         ctx.fillText('Canvas fingerprint 🌐', 4, 17);
-        data.fingerprinting.canvasFingerprint = canvas.toDataURL().substring(0, 50) + '...';
+        // Hash the FULL rendered image — this is the per-device identifier.
+        const canvasHash = await sha256Hex(canvas.toDataURL());
+        data.fingerprinting.canvasFingerprint = canvasHash.substring(0, 32);
       }
     } catch {
       data.fingerprinting.canvasFingerprint = 'Blocked or unavailable';
@@ -401,23 +432,33 @@ export function DigitalFingerprintProfessional() {
       data.fonts.fontFingerprint = 'N/A';
     }
 
-    // Audio Context Fingerprinting
+    // Audio Context Fingerprinting — render an offline audio graph and hash the
+    // output. Tiny differences in the audio stack produce a stable per-device hash.
     try {
-      const audioCtx = new (window.AudioContext || (window as unknown as Record<string, unknown>).webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const analyser = audioCtx.createAnalyser();
-      const gain = audioCtx.createGain();
-      const scriptProcessor = audioCtx.createScriptProcessor(4096, 1, 1);
-
-      gain.gain.value = 0;
-      oscillator.frequency.value = 10000;
-      oscillator.connect(analyser);
-      analyser.connect(scriptProcessor);
-      scriptProcessor.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      data.fingerprinting.audioContext = `Sample Rate: ${audioCtx.sampleRate}Hz, State: ${audioCtx.state}`;
-      audioCtx.close();
+      const OfflineCtx = (window.OfflineAudioContext || (window as unknown as Record<string, unknown>).webkitOfflineAudioContext) as typeof OfflineAudioContext | undefined;
+      if (OfflineCtx) {
+        const ctxA = new OfflineCtx(1, 5000, 44100);
+        const oscillator = ctxA.createOscillator();
+        oscillator.type = 'triangle';
+        oscillator.frequency.value = 10000;
+        const compressor = ctxA.createDynamicsCompressor();
+        compressor.threshold.value = -50;
+        compressor.knee.value = 40;
+        compressor.ratio.value = 12;
+        compressor.attack.value = 0;
+        compressor.release.value = 0.25;
+        oscillator.connect(compressor);
+        compressor.connect(ctxA.destination);
+        oscillator.start(0);
+        const rendered = await ctxA.startRendering();
+        const samples = rendered.getChannelData(0);
+        let acc = 0;
+        for (let i = 4500; i < 5000; i++) acc += Math.abs(samples[i]);
+        const audioHash = await sha256Hex(acc.toString());
+        data.fingerprinting.audioContext = `${audioHash.substring(0, 16)} @ ${rendered.sampleRate}Hz`;
+      } else {
+        data.fingerprinting.audioContext = 'Not available';
+      }
     } catch {
       data.fingerprinting.audioContext = 'Blocked or unavailable';
     }
@@ -437,7 +478,8 @@ export function DigitalFingerprintProfessional() {
       'Detectable' :
       'Not detectable';
 
-    // Battery API
+    // Battery API — deprecated and removed from most browsers (Firefox, Safari)
+    // for privacy reasons; only older Chromium exposes it.
     try {
       const getBattery = (navigator as unknown as Record<string, unknown>).getBattery as (() => Promise<Record<string, unknown>>) | undefined;
       if (getBattery) {
@@ -446,10 +488,13 @@ export function DigitalFingerprintProfessional() {
           data.advanced.battery = `${Math.round((battery.level as number) * 100)}%`;
           data.advanced.chargingStatus = String(battery.charging);
         }
+      } else {
+        data.advanced.battery = 'Not exposed (deprecated)';
+        data.advanced.chargingStatus = 'Not exposed (deprecated)';
       }
     } catch {
-      data.advanced.battery = 'Not available';
-      data.advanced.chargingStatus = 'Not available';
+      data.advanced.battery = 'Not exposed (deprecated)';
+      data.advanced.chargingStatus = 'Not exposed (deprecated)';
     }
 
     // PDF Viewer Detection
@@ -464,17 +509,74 @@ export function DigitalFingerprintProfessional() {
     ].filter(Boolean).length;
     data.advanced.sensors = `${sensorCount} sensor APIs available`;
 
+    // High-entropy User-Agent Client Hints (Chromium) — reveals exact OS/CPU/browser build
+    try {
+      const uaData = (navigator as unknown as { userAgentData?: { getHighEntropyValues?: (h: string[]) => Promise<Record<string, unknown>> } }).userAgentData;
+      if (uaData?.getHighEntropyValues) {
+        const hints = await uaData.getHighEntropyValues(['architecture', 'bitness', 'model', 'platformVersion', 'fullVersionList']);
+        data.identity.uaArchitecture = `${hints.architecture || 'N/A'}${hints.bitness ? ' (' + hints.bitness + '-bit)' : ''}`;
+        data.identity.uaPlatformVersion = String(hints.platformVersion || 'N/A');
+        data.identity.uaModel = String(hints.model || 'N/A') || 'N/A';
+        const fvl = hints.fullVersionList as Array<{ brand: string; version: string }> | undefined;
+        data.identity.uaFullVersion = Array.isArray(fvl) ? fvl.map(b => `${b.brand} ${b.version}`).join('; ') : 'N/A';
+      } else {
+        data.identity.uaFullVersion = 'Not supported';
+      }
+    } catch {
+      data.identity.uaFullVersion = 'N/A';
+    }
+
+    // Installed speech-synthesis voices — a strong, stable fingerprinting signal
+    try {
+      const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+      data.media.speechVoices = voices.length > 0 ? `${voices.length} voices` : 'None / not loaded';
+    } catch {
+      data.media.speechVoices = 'N/A';
+    }
+
+    // User preferences exposed via CSS media queries
+    const mq = (q: string) => (window.matchMedia ? window.matchMedia(q).matches : false);
+    data.privacy.colorScheme = mq('(prefers-color-scheme: dark)') ? 'dark' : mq('(prefers-color-scheme: light)') ? 'light' : 'no-preference';
+    data.privacy.reducedMotion = mq('(prefers-reduced-motion: reduce)') ? 'reduce' : 'no-preference';
+    data.privacy.contrastPreference = mq('(prefers-contrast: more)') ? 'more' : mq('(prefers-contrast: less)') ? 'less' : 'no-preference';
+    data.privacy.forcedColors = mq('(forced-colors: active)') ? 'active' : 'none';
+    data.screen.colorGamut = mq('(color-gamut: p3)') ? 'p3' : mq('(color-gamut: srgb)') ? 'srgb' : 'unknown';
+    data.screen.hdr = mq('(dynamic-range: high)') ? 'HDR' : 'standard';
+
+    // Timezone vs. language region mismatch — a common VPN / spoofing signal
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const lang = navigator.language || '';
+      const langRegion = lang.split('-')[1] || '';
+      const tzRegion = tz.split('/')[0] || '';
+      const indiaTz = tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta';
+      const indiaLang = /(-IN|^hi|^bn|^ta|^te)/i.test(lang);
+      const suspicious = (indiaTz && lang && !indiaLang && langRegion && langRegion !== 'IN')
+        || (!indiaTz && indiaLang && tzRegion && tzRegion !== 'Asia');
+      data.privacy.timezoneLocaleMatch = suspicious ? 'Mismatch (possible VPN/spoof)' : 'Consistent';
+    } catch {
+      data.privacy.timezoneLocaleMatch = 'N/A';
+    }
+
     return data;
   }, []);
 
-  const detectPrivateMode = async (): Promise<boolean> => {
+  // Incognito/private mode is intentionally hard to detect. localStorage works in
+  // private mode on all modern browsers, so we use the storage-quota heuristic:
+  // private windows expose a much smaller quota than normal ones.
+  const detectPrivateMode = async (): Promise<string> => {
     try {
-      const testKey = 'private_test';
-      localStorage.setItem(testKey, 'test');
-      localStorage.removeItem(testKey);
-      return false;
+      const nav = navigator as unknown as { storage?: { estimate?: () => Promise<{ quota?: number }> } };
+      if (nav.storage?.estimate) {
+        const { quota } = await nav.storage.estimate();
+        if (typeof quota === 'number') {
+          // Normal windows expose quota in the many-GB range; private windows are far smaller.
+          return quota < 1_200_000_000 ? 'Likely private/incognito' : 'Likely normal window';
+        }
+      }
+      return 'Cannot be reliably detected';
     } catch {
-      return true;
+      return 'Cannot be reliably detected';
     }
   };
 
@@ -487,12 +589,14 @@ export function DigitalFingerprintProfessional() {
     const hash = await generateFingerprint(data);
     setFingerprintHash(hash);
 
-    // Calculate uniqueness score
-    const score = calculateUniquenessScore(data);
-    setUniquenessScore(score);
+    // Estimate identifying entropy (bits) and derive a 0-100 identifiability score.
+    // ~33 bits is enough to single out one person on Earth.
+    const bits = calculateEntropy(data);
+    setEntropyBits(bits);
+    setUniquenessScore(Math.min(100, Math.round((bits / 33) * 100)));
 
     setLoading(false);
-  }, [collectBrowserData, generateFingerprint, calculateUniquenessScore]);
+  }, [collectBrowserData, generateFingerprint, calculateEntropy]);
 
   useEffect(() => {
     loadBrowserData();
@@ -573,13 +677,23 @@ export function DigitalFingerprintProfessional() {
     return { level: 'Common', color: 'text-green-600', bgColor: 'bg-green-100', description: 'Your fingerprint is relatively common' };
   };
 
+  // Convert bits of entropy into a human "1 in N" rarity (2^bits).
+  const rarityLabel = (bits: number): string => {
+    if (bits >= 33) return 'globally unique (1 in 8 billion+)';
+    const n = Math.pow(2, bits);
+    if (n >= 1e9) return `1 in ${(n / 1e9).toFixed(1)} billion`;
+    if (n >= 1e6) return `1 in ${(n / 1e6).toFixed(1)} million`;
+    if (n >= 1e3) return `1 in ${(n / 1e3).toFixed(1)}k`;
+    return `1 in ${Math.max(1, Math.round(n))}`;
+  };
+
   if (loading || !browserData) {
     return (
       <div className="min-h-[600px] flex items-center justify-center">
         <div className="text-center">
           <RefreshCw className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Analyzing Your Digital Fingerprint</h3>
-          <p className="text-gray-600">Collecting 500+ privacy exposure data points...</p>
+          <p className="text-gray-600">Measuring your browser&apos;s privacy exposure signals...</p>
         </div>
       </div>
     );
@@ -758,31 +872,32 @@ export function DigitalFingerprintProfessional() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                 <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                  <div className="text-3xl font-bold text-purple-600 mb-1">{uniquenessScore}%</div>
-                  <div className="text-sm font-medium text-purple-800">Uniqueness Score</div>
+                  <div className="text-3xl font-bold text-purple-600 mb-1">~{entropyBits} bits</div>
+                  <div className="text-sm font-medium text-purple-800">Identifying Entropy</div>
                   <div className={`text-xs mt-2 px-2 py-1 rounded ${uniqueness.bgColor} ${uniqueness.color} font-semibold`}>
                     {uniqueness.level}
                   </div>
                 </div>
 
+                <div className="text-center p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg">
+                  <div className="text-2xl font-bold text-pink-600 mb-1">{rarityLabel(entropyBits)}</div>
+                  <div className="text-sm font-medium text-pink-800">Estimated Rarity</div>
+                  <div className="text-xs text-pink-600 mt-2">How identifiable this browser is</div>
+                </div>
+
                 <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
                   <div className="text-3xl font-bold text-blue-600 mb-1">{totalDataPoints}</div>
                   <div className="text-sm font-medium text-blue-800">Data Points Exposed</div>
-                  <div className="text-xs text-blue-600 mt-2">Trackable attributes</div>
-                </div>
-
-                <div className="text-center p-4 bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg">
-                  <div className="text-3xl font-bold text-pink-600 mb-1">{categories.length}</div>
-                  <div className="text-sm font-medium text-pink-800">Tracking Categories</div>
-                  <div className="text-xs text-pink-600 mt-2">Attack vectors detected</div>
+                  <div className="text-xs text-blue-600 mt-2">Across {categories.length} categories</div>
                 </div>
               </div>
             </div>
 
             <div className="bg-white rounded-xl p-4 border-l-4 border-purple-500">
               <p className="text-sm text-gray-700">
-                <strong className="text-purple-700">What This Means:</strong> {uniqueness.description}.
-                A uniqueness score above 70% means you can be reliably tracked across websites even without cookies.
+                <strong className="text-purple-700">What This Means:</strong> {uniqueness.description}. Your browser reveals about{' '}
+                <strong>{entropyBits} bits</strong> of identifying information (roughly <strong>{rarityLabel(entropyBits)}</strong>) —
+                enough to be re-identified and tracked across sites without cookies. About 33 bits is enough to single out one person on Earth.
               </p>
             </div>
           </div>
