@@ -43,12 +43,26 @@ export interface AnalysisData {
 }
 
 function getConnectionString(): string | undefined {
-  return (
+  // Common unprefixed names first.
+  const direct =
     process.env.DATABASE_URL ||
     process.env.POSTGRES_URL ||
     process.env.DATABASE_URL_UNPOOLED ||
-    process.env.POSTGRES_URL_NON_POOLING
-  );
+    process.env.POSTGRES_URL_NON_POOLING;
+  if (direct) return direct;
+
+  // Fall back to any prefixed name a Marketplace/Neon integration may inject
+  // (e.g. "privacyanalyzer_DATABASE_URL", "myapp_POSTGRES_URL"). Prefer the
+  // pooled "*DATABASE_URL" / "*POSTGRES_URL" over non-pooling variants.
+  const keys = Object.keys(process.env);
+  const pooled =
+    keys.find((k) => /(^|_)DATABASE_URL$/i.test(k) && process.env[k]) ||
+    keys.find((k) => /(^|_)POSTGRES_URL$/i.test(k) && process.env[k]);
+  if (pooled) return process.env[pooled];
+
+  const unpooled =
+    keys.find((k) => /(^|_)(DATABASE_URL_UNPOOLED|POSTGRES_URL_NON_POOLING)$/i.test(k) && process.env[k]);
+  return unpooled ? process.env[unpooled] : undefined;
 }
 
 /** Whether a Postgres connection is configured (used for graceful degradation). */
