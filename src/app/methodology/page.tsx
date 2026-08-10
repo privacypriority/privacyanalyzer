@@ -100,8 +100,9 @@ export default function MethodologyPage() {
               Why Trust Our Analysis?
             </h2>
             <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-              Our scoring isn&apos;t random. It&apos;s based on real laws, expert research, and years of privacy protection work.
-              <strong className="text-gray-800"> We don&apos;t make things up—we follow the rules set by India&apos;s government and international privacy experts.</strong>
+              Our scoring isn&apos;t random. Every check maps to a specific provision of India&apos;s DPDP Act 2023 and Rules 2025,
+              and the final math is a fixed, open formula.
+              <strong className="text-gray-800"> We don&apos;t make things up—we follow the rules set by India&apos;s government and established privacy research.</strong>
             </p>
           </div>
 
@@ -183,9 +184,11 @@ export default function MethodologyPage() {
                 <div className="bg-gray-100 rounded-xl p-6 border border-gray-300">
                   <h4 className="text-lg font-bold text-gray-900 mb-3">🧮 The Final Score</h4>
                   <p className="text-gray-700 text-sm leading-relaxed">
-                    We score each of these 6 categories from 1 to 10. Then we combine them using the percentages above.
-                    The result is your final privacy score (1-10) and a letter grade (A+ to F)—just like in school!
-                    <strong className="text-gray-900"> Higher score = Better privacy protection for YOU.</strong>
+                    AI reads the policy and rates each of the 6 categories from 1 to 10 against the DPDP criteria.
+                    Our server then combines them with the fixed weights above — <strong>score = Σ(category × weight)</strong> —
+                    and derives the letter grade (A+ to F) and risk level by fixed thresholds. That final math is
+                    deterministic, so the same category scores always give the same grade.
+                    <strong className="text-gray-900"> Higher score = better privacy protection for YOU.</strong>
                   </p>
                 </div>
               </div>
@@ -212,10 +215,10 @@ export default function MethodologyPage() {
               <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-4xl">🔄</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Regular Updates</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Kept Current</h3>
               <p className="text-gray-700 leading-relaxed">
-                We update our scoring system every 3 months to match new privacy laws, court rulings,
-                and the latest research on data protection.
+                We update the framework as the law evolves — it already reflects the DPDP Rules 2025
+                notified on 13 November 2025 and their staggered enforcement timeline.
               </p>
             </div>
 
@@ -223,10 +226,10 @@ export default function MethodologyPage() {
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-4xl">👨‍⚖️</span>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Expert Review</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Open &amp; Transparent</h3>
               <p className="text-gray-700 leading-relaxed">
-                Privacy lawyers and security researchers check our work before we release updates.
-                This keeps our analysis accurate and trustworthy.
+                Our entire methodology and code are open source. Anyone can inspect exactly how a score
+                is calculated, cite the DPDP provision behind each check, and challenge it publicly.
               </p>
             </div>
 

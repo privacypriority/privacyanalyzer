@@ -42,11 +42,11 @@ export function MethodologySection() {
           legal: 'DPDP Act Sec. 6, Rule 3 - Consent requirements'
         },
         {
-          point: 'Retention periods justified and aligned with Third Schedule classes (A: 3 yrs, B: 10 yrs, C: indefinite with cause)',
-          legal: 'Rule 8, Third Schedule - Data retention framework'
+          point: 'Retention limited to purpose; erase when purpose served or consent withdrawn. Large e-commerce (2 cr+ users), online gaming (50 lakh+) and social-media (2 cr+) fiduciaries must erase 3 years after last user interaction (Third Schedule); 1-year minimum log retention',
+          legal: 'Rule 8, Third Schedule - Data retention & erasure'
         }
       ],
-      scientificRationale: 'Data minimization is weighted highest (30%) based on empirical research showing excessive data collection poses the greatest privacy risk to individuals. Studies demonstrate that limiting collection scope reduces breach impact by 60-80%.'
+      scientificRationale: 'Weighted highest (30%) because data that is never collected cannot be breached, misused, or shared. Minimizing collection at the source is the single most effective privacy control, so it carries the largest weight.'
     },
     {
       name: 'Third-Party Data Sharing',
@@ -80,14 +80,14 @@ export function MethodologySection() {
           legal: 'DPDP Act Sec. 5 - Transparency principle'
         }
       ],
-      scientificRationale: '25% weight reflects the quantifiable risk of data breaches in third-party sharing. Research shows 63% of breaches involve third parties, making this the second-highest risk factor.'
+      scientificRationale: 'Weighted second-highest (25%) because once data leaves the collector, control is largely lost. Third-party sharing and cross-border transfers are a leading vector for breaches and downstream misuse, so it is the second-largest weight.'
     },
     {
       name: 'Individual Rights & Controls',
       weight: 20,
       icon: <Scale className="h-5 w-5" />,
       description: 'Evaluates Data Principal rights implementation per DPDP Act Chapter IV and Rule 14',
-      legalBasis: 'DPDP Act Sec. 11-13 (Data Principal rights), Rule 14 (Rights exercise procedures), Sec. 32 (Grievance redressal)',
+      legalBasis: 'DPDP Act Sec. 11-14 (Data Principal rights), Rule 14 (Rights exercise procedures), Sec. 13 (Grievance redressal)',
       criteria: [
         {
           point: 'Right to access: Summary and comprehensive personal data access within reasonable time',
@@ -103,11 +103,11 @@ export function MethodologySection() {
         },
         {
           point: 'Right to grievance redressal: Designated Grievance Officer, contact details, complaint resolution process',
-          legal: 'DPDP Act Sec. 32 - Grievance mechanisms'
+          legal: 'DPDP Act Sec. 13 - Right to grievance redressal'
         },
         {
-          point: 'Right to nominate: Facility for nomination to exercise rights of deceased Data Principals',
-          legal: 'DPDP Act Sec. 13, Rule 14 - Nomination rights'
+          point: 'Right to nominate: Facility for nomination to exercise rights on death or incapacity',
+          legal: 'DPDP Act Sec. 14, Rule 14 - Nomination rights'
         },
         {
           point: 'Consent withdrawal: Easy, accessible mechanism with prompt processing',
@@ -118,7 +118,7 @@ export function MethodologySection() {
           legal: 'DPDP Act - Reasonable time requirement'
         }
       ],
-      scientificRationale: '20% weight based on user control correlation studies showing strong rights implementation reduces privacy violations by 45-55%, making it a critical middle-tier factor.'
+      scientificRationale: 'Weighted 20% because enforceable Data Principal rights (access, correction, erasure, withdrawal) let users limit ongoing exposure and correct harms. It is a critical middle-tier control that remedies collection and sharing after the fact.'
     },
     {
       name: 'Security & Risk Management',
@@ -163,7 +163,7 @@ export function MethodologySection() {
       weight: 7,
       icon: <FileText className="h-5 w-5" />,
       description: 'DPDP Act 2023 and Rules 2025 statutory compliance for Indian jurisdiction',
-      legalBasis: 'DPDP Act Sec. 25 (DPB registration), Rule 13 (SDF obligations), Rule 16-22 (Board procedures), Rules 1-15 (Compliance framework)',
+      legalBasis: 'DPDP Act Sec. 10 (Significant Data Fiduciary), Rule 13 (SDF obligations), Rule 12 (Consent verification), Rules 1-23 (Compliance framework)',
       criteria: [
         {
           point: 'Data Protection Officer (DPO) appointment: For Significant Data Fiduciaries',
@@ -171,7 +171,7 @@ export function MethodologySection() {
         },
         {
           point: 'Grievance Officer appointment: Contact details publicly available',
-          legal: 'DPDP Act Sec. 32 - Grievance Officer'
+          legal: 'DPDP Act Sec. 8(10) - Grievance Officer obligation'
         },
         {
           point: 'Data Protection Board registration: Where applicable for SDFs',
@@ -224,37 +224,37 @@ export function MethodologySection() {
           legal: 'Rule 4, First Schedule - CM display standards'
         }
       ],
-      scientificRationale: '3% weight reflects research showing transparency alone doesn\'t prevent privacy harms. Users rarely read policies (only 1-9% read fully), making substantive protections (97% weight) more impactful.'
+      scientificRationale: 'Weighted 3% because transparency alone does not prevent harm — studies consistently show very few users read privacy policies in full. It matters, but the substantive protections in the other categories (97% combined weight) do the real work.'
     }
   ];
 
   const riskLevels = [
     {
-      level: 'EXEMPLARY (10)',
+      level: 'EXEMPLARY (9.0–10)',
       color: 'bg-green-100 text-green-800 border-green-300',
       description: 'Privacy-by-design implementation with technical enforcement. Exceeds DPDP Act and Rules minimum requirements significantly.',
       example: 'E2E encryption, zero-knowledge architecture, automatic data deletion, comprehensive rights automation'
     },
     {
-      level: 'LOW RISK (8-9)',
+      level: 'LOW RISK (7.0–8.9)',
       color: 'bg-blue-100 text-blue-800 border-blue-300',
       description: 'Strong privacy framework with minor gaps. Full DPDP compliance with industry best practices.',
       example: 'All required safeguards present, comprehensive rights, clear consent, proactive transparency'
     },
     {
-      level: 'MODERATE RISK (6-7)',
+      level: 'MODERATE RISK (5.0–6.9)',
       color: 'bg-yellow-100 text-yellow-800 border-yellow-300',
       description: 'Basic privacy protections present. DPDP partially compliant with identified improvement areas.',
       example: 'Some rights limited, vague purposes, basic security, consent withdrawal unclear'
     },
     {
-      level: 'MODERATE-HIGH RISK (4-5)',
+      level: 'MODERATE-HIGH RISK (3.0–4.9)',
       color: 'bg-orange-100 text-orange-800 border-orange-300',
       description: 'Multiple compliance gaps. Data Principal rights compromised, significant DPDP violations probable.',
       example: 'Excessive collection, broad sharing without consent, weak security, rights difficult to exercise'
     },
     {
-      level: 'HIGH RISK (1-3)',
+      level: 'HIGH RISK (1.0–2.9)',
       color: 'bg-red-100 text-red-800 border-red-300',
       description: 'Significant DPDP Act and Rules violations. Data Protection Board enforcement action probable.',
       example: 'No consent mechanism, unrestricted sharing, no deletion rights, security breaches likely, non-compliance'
@@ -309,14 +309,14 @@ export function MethodologySection() {
               <div className="text-xs text-blue-600 mt-1">Weighted by impact</div>
             </div>
             <div className="text-center p-4 bg-white rounded-lg border-2 border-blue-200">
-              <div className="text-2xl font-bold text-blue-600">42</div>
+              <div className="text-2xl font-bold text-blue-600">39</div>
               <div className="text-sm text-blue-700 font-medium">Compliance Criteria</div>
               <div className="text-xs text-blue-600 mt-1">Evidence-based checkpoints</div>
             </div>
             <div className="text-center p-4 bg-white rounded-lg border-2 border-blue-200">
-              <div className="text-2xl font-bold text-blue-600">15</div>
+              <div className="text-2xl font-bold text-blue-600">23</div>
               <div className="text-sm text-blue-700 font-medium">DPDP Rules</div>
-              <div className="text-xs text-blue-600 mt-1">Rules 1-15 (2025)</div>
+              <div className="text-xs text-blue-600 mt-1">Rules 1-23 (2025)</div>
             </div>
             <div className="text-center p-4 bg-white rounded-lg border-2 border-blue-200">
               <div className="text-2xl font-bold text-blue-600">7</div>
@@ -456,7 +456,7 @@ export function MethodologySection() {
                       <span className="text-green-600 font-bold">•</span>
                       <div>
                         <strong className="text-green-900">DPDP Rules 2025</strong>
-                        <p className="text-green-700 text-xs">15 Rules + 7 Schedules (Notified Jan 3, 2025)</p>
+                        <p className="text-green-700 text-xs">23 Rules + 7 Schedules (Notified 13 Nov 2025)</p>
                       </div>
                     </li>
                     <li className="flex items-start gap-2">
@@ -515,12 +515,12 @@ export function MethodologySection() {
               {/* Updated Status */}
               <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-500 rounded">
                 <p className="text-sm text-green-900 font-semibold mb-1">
-                  ✅ DPDP Rules 2025 Status: ACTIVE & ENFORCEABLE
+                  ✅ DPDP Rules 2025 Status: NOTIFIED — Staggered Enforcement
                 </p>
                 <p className="text-xs text-green-800">
-                  The Digital Personal Data Protection Rules 2025 were officially notified on January 3, 2025.
-                  Our analysis framework is fully updated to include all 15 Rules and 7 Schedules. Compliance
-                  assessments reflect current enforceable requirements under Indian law.
+                  The Digital Personal Data Protection Rules 2025 were notified on 13 November 2025, with obligations
+                  commencing in stages and full compliance required by 13 May 2027. Our analysis framework is updated
+                  to reflect all 23 Rules and 7 Schedules and assesses policies against these requirements.
                 </p>
               </div>
             </div>
@@ -530,31 +530,32 @@ export function MethodologySection() {
               <h5 className="text-lg font-semibold text-purple-900 mb-3">🎯 Methodology Validation</h5>
               <div className="grid md:grid-cols-2 gap-4 text-sm">
                 <div className="bg-white rounded p-3 border border-purple-200">
-                  <h6 className="font-bold text-purple-800 mb-2">Objectivity</h6>
+                  <h6 className="font-bold text-purple-800 mb-2">Deterministic aggregation</h6>
                   <p className="text-purple-700 text-xs">
-                    Each criterion is binary (present/absent) or scalar (quantifiable), minimizing subjective judgment.
-                    Scoring follows documented rubrics tied to specific legal provisions.
+                    Category scores (1–10) are assessed by AI against explicit DPDP criteria. The overall score, grade
+                    and risk level are then computed by a fixed weighted formula server-side — not AI-generated — so the
+                    aggregation is fully reproducible.
                   </p>
                 </div>
                 <div className="bg-white rounded p-3 border border-purple-200">
-                  <h6 className="font-bold text-purple-800 mb-2">Reproducibility</h6>
+                  <h6 className="font-bold text-purple-800 mb-2">Consistency &amp; caching</h6>
                   <p className="text-purple-700 text-xs">
-                    Same policy analyzed multiple times yields consistent results (±0.3 points on 10-point scale),
-                    demonstrating methodological reliability.
+                    Identical policy content returns the identical cached result (keyed on a SHA-256 hash of the text),
+                    so a re-analysis of unchanged text is byte-for-byte consistent for 60 days.
                   </p>
                 </div>
                 <div className="bg-white rounded p-3 border border-purple-200">
-                  <h6 className="font-bold text-purple-800 mb-2">Legal Accuracy</h6>
+                  <h6 className="font-bold text-purple-800 mb-2">Legal traceability</h6>
                   <p className="text-purple-700 text-xs">
-                    Every criterion directly maps to DPDP Act sections (Sec. 5-16, 32) and Rules 2025 (Rules 1-15, Schedules 1-7)
-                    with specific citations.
+                    Every criterion maps to specific DPDP Act sections (Sec. 5–16, 8(10), 32) and Rules 2025
+                    (Rules 1–23, Schedules 1–7), and findings cite the relevant provision.
                   </p>
                 </div>
                 <div className="bg-white rounded p-3 border border-purple-200">
-                  <h6 className="font-bold text-purple-800 mb-2">Risk-Calibrated</h6>
+                  <h6 className="font-bold text-purple-800 mb-2">Impact-weighted</h6>
                   <p className="text-purple-700 text-xs">
-                    Weights derived from privacy breach databases (2015-2024) showing data minimization and sharing
-                    practices cause 73% of privacy harms.
+                    Weights prioritise the controls that most reduce real-world harm — data minimization and third-party
+                    sharing (55% combined) — over downstream and procedural factors.
                   </p>
                 </div>
               </div>
