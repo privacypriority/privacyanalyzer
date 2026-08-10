@@ -53,6 +53,45 @@ export default function MethodologyPage() {
         </div>
       </section>
 
+      {/* Two audience views */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white to-slate-50">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">One report, two views</h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Every analysis speaks to the two people a privacy policy affects most — the person whose
+              data it is, and the organisation that wrote it.
+            </p>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/60 to-white p-7">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600 px-3 py-1 text-xs font-semibold text-white">For You</span>
+              <h3 className="mt-4 text-xl font-bold text-gray-900">If you use the service</h3>
+              <p className="mt-2 text-gray-600">
+                A plain-language action plan that puts your privacy first — no legal jargon.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-gray-600">
+                <li>• <strong>What to do</strong>: prioritised steps to protect yourself with this specific service</li>
+                <li>• <strong>Your DPDP rights</strong>: Access (§11), Correction &amp; Erasure (§12), Grievance (§13), Nominate (§14) and Withdraw Consent (§6/7) — and exactly how to use each</li>
+                <li>• <strong>Watch-outs</strong>: the specific things in this policy to be cautious about</li>
+              </ul>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-7">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">For Policy Owners</span>
+              <h3 className="mt-4 text-xl font-bold text-gray-900">If you wrote the policy</h3>
+              <p className="mt-2 text-gray-600">
+                A DPDP compliance health check that shows exactly where your data handling stands and what to fix.
+              </p>
+              <ul className="mt-4 space-y-2 text-sm text-gray-600">
+                <li>• <strong>Handling health score</strong> against the DPDP Act 2023 &amp; Rules 2025</li>
+                <li>• <strong>Obligation scorecard</strong>: Notice, Consent, Rights, Security, 72-hour breach notice, Retention, Children&apos;s data, Grievance, Cross-border, SDF and more — each marked Met / Partial / Gap with the relevant section</li>
+                <li>• <strong>Specific fixes</strong> and a &ldquo;fix these first&rdquo; priority list</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Scientific Approach */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
