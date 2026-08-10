@@ -408,6 +408,46 @@ export function MethodologySection() {
               </div>
             </div>
 
+            {/* Scoring Rubric */}
+            <div>
+              <h5 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
+                <Calculator className="h-5 w-5" />
+                How Each Category Is Scored (1–10 Rubric)
+              </h5>
+              <p className="text-sm text-blue-800 mb-4">
+                Every category uses the same anchored scale, so a given policy maps to the same band consistently.
+                Scores reflect <strong>only what the policy explicitly states</strong> — if an obligation is not
+                addressed, it is treated as absent and scored low (no benefit of the doubt).
+              </p>
+              <div className="space-y-2 mb-4">
+                {[
+                  { band: '9–10', label: 'Exemplary', desc: 'Explicit privacy-by-design protections that meet and exceed DPDP obligations, with specific verifiable mechanisms.', color: 'bg-green-100 text-green-800 border-green-300' },
+                  { band: '7–8', label: 'Strong', desc: 'Explicitly meets the core DPDP obligations with clear, specific commitments; only minor gaps.', color: 'bg-blue-100 text-blue-800 border-blue-300' },
+                  { band: '5–6', label: 'Adequate', desc: 'Basic protections present but vague, partial, or with notable gaps; several obligations only implied.', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+                  { band: '3–4', label: 'Weak', desc: 'Minimal protection; largely silent on or contradicting key DPDP obligations; user-unfavourable defaults.', color: 'bg-orange-100 text-orange-800 border-orange-300' },
+                  { band: '1–2', label: 'Poor', desc: 'No meaningful protection; likely DPDP non-compliance; broad collection/sharing with little user control.', color: 'bg-red-100 text-red-800 border-red-300' },
+                ].map((r, i) => (
+                  <div key={i} className="flex items-start gap-3 bg-white rounded-lg p-3 border-2 border-blue-100">
+                    <Badge className={`${r.color} font-bold text-sm px-3 py-1 border shrink-0`}>{r.band}</Badge>
+                    <div>
+                      <span className="text-sm font-semibold text-blue-900">{r.label}</span>
+                      <p className="text-xs text-blue-700 mt-0.5">{r.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="bg-white rounded-lg p-4 border-2 border-indigo-200">
+                <p className="text-sm font-semibold text-indigo-900 mb-1">Overall score formula</p>
+                <p className="text-xs text-indigo-800">
+                  A category&apos;s score = the proportion of its listed criteria that are explicitly satisfied.
+                  The overall score is the fixed weighted average
+                  <strong> Σ(category × weight)</strong> (weights: 30 / 25 / 20 / 15 / 7 / 3 = 100%). The grade
+                  (A+ to F) and risk level are then derived by fixed numeric thresholds — this final step is fully
+                  deterministic and identical for the same category scores every time.
+                </p>
+              </div>
+            </div>
+
             {/* Risk Classification */}
             <div>
               <h5 className="text-lg font-semibold text-blue-900 mb-4 flex items-center gap-2">
