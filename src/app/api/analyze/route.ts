@@ -17,7 +17,7 @@ import {
 // Runtime configuration — Node.js runtime on Vercel for scraping support
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-export const maxDuration = 60; // 60 seconds max execution time (Vercel Pro)
+export const maxDuration = 300; // up to 300s (Vercel Fluid Compute) for scrape + AI analysis
 
 // OpenRouter models in fallback order: default (primary) first, then each fallback on failure.
 // https://openrouter.ai/openrouter/free  (default — auto-routed free model)
@@ -400,8 +400,8 @@ export async function POST(request: NextRequest) {
             url: sanitizedUrl,
             formats: ['markdown'],
             onlyMainContent: true,
-            waitFor: 3000, // Increased wait time for JavaScript-heavy sites
-            timeout: 45000, // Increased timeout for better success rate
+            waitFor: 2000, // wait for JavaScript-heavy sites
+            timeout: 25000, // scrape timeout
             // Custom headers to mimic real browser
             headers: {
               'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
