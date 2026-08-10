@@ -682,6 +682,7 @@ export async function POST(request: NextRequest) {
 
     // Analyze with OpenRouter AI using openrouter/free model with fallback support
     let analysisText: string | null | undefined = null;
+    let parsedAnalysis: any = null;
     let lastError: Error | null = null;
     const maxRetries = 3; // Try all available keys (up to 3) if needed
 
@@ -745,8 +746,19 @@ export async function POST(request: NextRequest) {
         console.log(`[OpenRouter] Response received, length: ${analysisText?.length || 0}, finishReason: ${completion.choices?.[0]?.finishReason}`);
 
         if (analysisText) {
-          console.log(`[Analysis] ✓ Successfully completed using ${keyName}`);
-          break; // Success, exit retry loop
+          // Parse here so an unparseable response falls through to the next model.
+          try {
+            const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+            parsedAnalysis = JSON.parse(jsonMatch ? jsonMatch[0] : analysisText);
+            console.log(`[Analysis] ✓ Successfully completed and parsed using ${keyName} (${currentModel})`);
+            break; // Success, exit retry loop
+          } catch (parseErr) {
+            const msg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+            console.warn(`[Analysis] ${currentModel} returned unparseable JSON, trying next model...`, msg);
+            lastError = new Error('Model returned unparseable analysis JSON');
+            analysisText = null;
+            // do not break — continue to the next attempt/model
+          }
         }
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
@@ -790,23 +802,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!analysisText) {
+    if (!parsedAnalysis) {
       const errorDetails = lastError ? lastError.message : 'Unknown error';
       console.error('[Analysis] All retry attempts failed. Last error:', errorDetails);
       throw lastError || new Error('No analysis generated after all retry attempts');
     }
 
-    // Parse JSON response
-    let analysis;
-    try {
-      // Extract JSON from response (in case there's extra text)
-      const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
-      const jsonText = jsonMatch ? jsonMatch[0] : analysisText;
-      analysis = JSON.parse(jsonText);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', parseError);
-      throw new Error('Failed to parse analysis results');
-    }
+    const analysis = parsedAnalysis;
 
     // --- Server-side scoring validation ---
     // 1. Clamp every category score to 1-10 range
