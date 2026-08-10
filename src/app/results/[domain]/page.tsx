@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { UserActionPlan, ComplianceScorecard } from '@/components/AudienceSections';
 
 // Helper function to get grade color
 function getGradeColor(grade: string): string {
@@ -221,6 +222,20 @@ export default function ResultsPage() {
             <p className="text-slate-700 leading-relaxed">{analysisData.executive_summary}</p>
           </CardContent>
         </Card>
+
+        {/* For You — user rights & action plan (priority audience) */}
+        {analysisData.user_action_plan && (
+          <div className="mb-8">
+            <UserActionPlan plan={analysisData.user_action_plan} />
+          </div>
+        )}
+
+        {/* For Policy Owners — DPDP compliance scorecard */}
+        {analysisData.compliance_scorecard && (
+          <div className="mb-8">
+            <ComplianceScorecard card={analysisData.compliance_scorecard} />
+          </div>
+        )}
 
         {/* Category Scores */}
         <Card className="mb-8">
