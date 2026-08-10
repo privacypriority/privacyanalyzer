@@ -130,7 +130,7 @@ export async function initializeDatabase(): Promise<void> {
 }
 
 /**
- * Return a cached analysis for (domain, contentHash) that is at most 30 days old.
+ * Return a cached analysis for (domain, contentHash) that is at most 60 days old.
  */
 export async function getCachedAnalysis(
   domain: string,
@@ -144,7 +144,7 @@ export async function getCachedAnalysis(
       SELECT * FROM analyses
       WHERE domain = ${domain}
         AND content_hash = ${contentHash}
-        AND last_checked_at > now() - interval '30 days'
+        AND last_checked_at > now() - interval '60 days'
       ORDER BY last_checked_at DESC
       LIMIT 1
     `) as unknown as StoredAnalysis[];
@@ -191,10 +191,30 @@ export async function saveAnalysis(
       RETURNING id
     `) as unknown as Array<{ id: number }>;
 
+    // Best-effort purge of analyses older than the 60-day retention window.
+    cleanupOldAnalyses().catch(() => {});
+
     return rows[0]?.id ?? null;
   } catch (error) {
     console.error('[DB] Error saving analysis:', error);
     throw error;
+  }
+}
+
+/** Delete analyses older than the 60-day retention window. Best-effort. */
+export async function cleanupOldAnalyses(): Promise<number> {
+  const sql = getSql();
+  if (!sql) return 0;
+  try {
+    const rows = (await sql`
+      DELETE FROM analyses
+      WHERE last_checked_at < now() - interval '60 days'
+      RETURNING id
+    `) as unknown as Array<{ id: number }>;
+    return rows.length;
+  } catch (error) {
+    console.error('[DB] Error cleaning up old analyses:', error);
+    return 0;
   }
 }
 
