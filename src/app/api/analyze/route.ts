@@ -183,7 +183,22 @@ DUAL SCORING METHODOLOGY:
      * Grievance redressal (Sec. 13 right; Sec. 8(10) fiduciary obligation)
      * DPO appointment where required (Rule 13)
 
-CATEGORY SCORING: Rate each category 1-10 (10 = exemplary privacy protection, 1 = significant privacy risk)
+CATEGORY SCORING: Rate each category 1-10 using the anchored rubric below.
+
+SCORING RUBRIC (apply the same anchored scale to every category so scores are consistent and defensible):
+- 9-10 (Exemplary): The policy EXPLICITLY provides privacy-by-design protections that meet AND exceed the DPDP obligations for this category, with specific, verifiable mechanisms (named tools, contacts, timelines, safeguards).
+- 7-8 (Strong): The policy explicitly meets the core DPDP obligations for this category with clear, specific commitments; only minor gaps.
+- 5-6 (Adequate): Basic protections are present but vague, partial, or with notable gaps; several obligations are only implied rather than stated.
+- 3-4 (Weak): Minimal protection; the policy is largely silent on, or contradicts, key DPDP obligations; user-unfavourable defaults.
+- 1-2 (Poor): No meaningful protection; likely DPDP non-compliance; the policy permits broad collection/sharing with little user control.
+
+MANDATORY EVIDENCE RULES (these keep scoring objective and reproducible):
+1. Score ONLY on what the policy text EXPLICITLY states. Do not assume, infer good faith, or credit practices the policy does not describe.
+2. Silence = not met. If the policy does not address an obligation, treat that obligation as ABSENT and score it low — do not give benefit of the doubt.
+3. Ground every category score in the criteria listed for that category: the score reflects the PROPORTION of that category's criteria that are explicitly and verifiably satisfied.
+4. In each category's "reasoning", cite specific evidence (quote or paraphrase the relevant policy statement) or explicitly note its absence. Vague reasoning is not acceptable.
+5. Be consistent: the same policy text must map to the same score band every time.
+
 
 **DATA MINIMIZATION & COLLECTION PRACTICES (Weight: 30%)**
 Evaluate against DPDP Act 2023 Sec. 5 and DPDP Rules 2025 privacy-by-design principles:
@@ -739,7 +754,7 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Analysis] Using ${keyName} for AI analysis (attempt ${attempt + 1}/${maxRetries})`);
         console.log(`[OpenRouter] Sending request to model: ${currentModel}`);
-        console.log(`[OpenRouter] Request params: temperature=0.3, maxTokens=6000, content_length=${content.length}`);
+        console.log(`[OpenRouter] Request params: temperature=0.1, maxTokens=6000, content_length=${content.length}`);
 
         const completion = await openrouter.chat.send({
           chatGenerationParams: {
@@ -754,7 +769,7 @@ export async function POST(request: NextRequest) {
                 content: `Analyze this privacy policy:\n\n${smartTruncate(content, 16000)}`
               }
             ],
-            temperature: 0.3,
+            temperature: 0.1, // low temperature for consistent, reproducible scoring
             maxTokens: 6000,
             stream: false,
           },
