@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertCircle, CheckCircle, Search, ExternalLink, Shield, Lock, Eye, Users, FileText, Scale, RotateCcw } from 'lucide-react';
+import { UserActionPlan, ComplianceScorecard } from '@/components/AudienceSections';
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -63,6 +64,19 @@ interface AnalysisResult {
     };
     privacy_grade: string;
     executive_summary: string;
+    dpdp_compliance_score?: number;
+    user_action_plan?: {
+      summary?: string;
+      top_actions?: { action: string; why?: string; priority?: string }[];
+      your_rights?: { right: string; dpdp_reference?: string; available?: string; how_to_use?: string }[];
+      watch_outs?: string[];
+    };
+    compliance_scorecard?: {
+      overall_health?: string;
+      pii_handling_health_score?: number;
+      obligations?: { area: string; dpdp_reference?: string; status?: string; finding?: string; action_required?: string }[];
+      priority_gaps?: string[];
+    };
   };
 }
 
@@ -527,6 +541,11 @@ export default function PrivacyAnalyzer() {
             <p className="text-sm text-gray-600 leading-relaxed">{result.analysis.executive_summary}</p>
           </div>
 
+          {/* For You — user rights & action plan (priority audience) */}
+          {result.analysis.user_action_plan && (
+            <UserActionPlan plan={result.analysis.user_action_plan} />
+          )}
+
           {/* Charts Row: Radar + Bar */}
           <div className="grid sm:grid-cols-2 gap-6">
             <div>
@@ -566,6 +585,11 @@ export default function PrivacyAnalyzer() {
               })}
             </div>
           </div>
+
+          {/* For Policy Owners — DPDP compliance scorecard */}
+          {result.analysis.compliance_scorecard && (
+            <ComplianceScorecard card={result.analysis.compliance_scorecard} />
+          )}
 
           {/* Critical Findings with Donut */}
           {allFindings.length > 0 && (

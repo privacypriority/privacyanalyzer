@@ -292,9 +292,48 @@ Provide your response in this JSON format:
     "medium_term_improvements": ["privacy enhancements for Indian users"],
     "best_practice_adoption": ["industry leading practices to consider for Indian market"]
   },
+  "user_action_plan": {
+    "summary": "1-2 plain-language sentences telling a regular, non-technical Indian user what this policy means for THEIR personal data and privacy — no jargon",
+    "top_actions": [
+      {"action": "concrete, specific step this user should take (e.g. 'Turn off ad personalization in Settings > Privacy')", "why": "plain-language reason it matters to them", "priority": "HIGH/MEDIUM/LOW"}
+    ],
+    "your_rights": [
+      {"right": "Right to Access", "dpdp_reference": "Sec 11", "available": "YES/PARTIAL/UNCLEAR/NO", "how_to_use": "how THIS user can exercise it with this specific service based on the policy (mention the contact/grievance channel if stated)"},
+      {"right": "Right to Correction & Erasure", "dpdp_reference": "Sec 12", "available": "YES/PARTIAL/UNCLEAR/NO", "how_to_use": "..."},
+      {"right": "Right to Grievance Redressal", "dpdp_reference": "Sec 13", "available": "YES/PARTIAL/UNCLEAR/NO", "how_to_use": "..."},
+      {"right": "Right to Nominate", "dpdp_reference": "Sec 14", "available": "YES/PARTIAL/UNCLEAR/NO", "how_to_use": "..."},
+      {"right": "Right to Withdraw Consent", "dpdp_reference": "Sec 6/7", "available": "YES/PARTIAL/UNCLEAR/NO", "how_to_use": "..."}
+    ],
+    "watch_outs": ["specific things IN THIS policy the user should be cautious about, in plain language (max 4)"]
+  },
+  "compliance_scorecard": {
+    "overall_health": "1-2 sentence verdict on the organisation's PII-handling health under DPDP for a compliance/legal owner",
+    "pii_handling_health_score": number (1-10, how healthy their overall data handling is vs DPDP Act 2023 + Rules 2025),
+    "obligations": [
+      {"area": "Notice", "dpdp_reference": "Sec 5, Rule 3", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED", "finding": "what the policy does/omits", "action_required": "specific fix to close the gap"},
+      {"area": "Consent (free, specific, informed, withdrawable)", "dpdp_reference": "Sec 6", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED", "finding": "...", "action_required": "..."},
+      {"area": "Data Principal Rights", "dpdp_reference": "Sec 11-14, Rule 14", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED", "finding": "...", "action_required": "..."},
+      {"area": "Security Safeguards", "dpdp_reference": "Sec 8(5), Rule 6", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED", "finding": "...", "action_required": "..."},
+      {"area": "Breach Notification (Board within 72h)", "dpdp_reference": "Sec 8(6), Rule 7", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED", "finding": "...", "action_required": "..."},
+      {"area": "Retention & Erasure", "dpdp_reference": "Sec 8(7), Rule 8, Third Schedule", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED", "finding": "...", "action_required": "..."},
+      {"area": "Children's Data (verifiable parental consent, no targeting <18)", "dpdp_reference": "Sec 9, Rule 10", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED/NOT_APPLICABLE", "finding": "...", "action_required": "..."},
+      {"area": "Grievance Officer / Contact", "dpdp_reference": "Sec 8(10)", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED", "finding": "...", "action_required": "..."},
+      {"area": "Cross-Border Transfers", "dpdp_reference": "Sec 16, Rule 15", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED/NOT_APPLICABLE", "finding": "...", "action_required": "..."},
+      {"area": "Significant Data Fiduciary (DPO, DPIA, audit)", "dpdp_reference": "Sec 10, Rule 13", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED/NOT_APPLICABLE", "finding": "...", "action_required": "..."},
+      {"area": "Processor Contracts", "dpdp_reference": "Sec 8(2)", "status": "MET/PARTIAL/GAP/NOT_ADDRESSED", "finding": "...", "action_required": "..."}
+    ],
+    "priority_gaps": ["the most urgent gaps to fix first, ordered by importance (max 5)"]
+  },
   "privacy_grade": "string (A+ to F based on risk level)",
   "executive_summary": "Professional 2-3 sentence assessment for Indian stakeholders focusing on DPDP Act 2023 and Rules 2025 compliance"
 }
+
+IMPORTANT DPDP GROUNDING (be accurate — DPDP Rules 2025 were notified 13 Nov 2025):
+- Data Principal rights: Access (Sec 11), Correction & Erasure (Sec 12), Grievance Redressal (Sec 13), Nominate (Sec 14), Withdraw Consent (Sec 6/7). Exercising rights is free unless excessive/repetitive. A "child" is anyone under 18.
+- Breach notification: notify affected Data Principals without delay AND report to the Data Protection Board within 72 hours (Rule 7); non-compliance penalty up to Rs 200 crore.
+- Retention (Rule 8, Third Schedule): erase when purpose served or consent withdrawn; large e-commerce (2 cr+ users), online gaming (50 lakh+), and social-media (2 cr+) fiduciaries must erase 3 years after last user interaction; 1-year minimum log retention.
+- Only Significant Data Fiduciaries (designated by Government) must appoint a DPO (India-based), run DPIAs, and get audited.
+For 'user_action_plan' write for a non-technical common person and prioritise THEIR privacy and rights. For 'compliance_scorecard' write for the policy owner/compliance team with specific, actionable DPDP gaps. Base every finding ONLY on evidence in the provided policy; if the policy is silent on an obligation, mark it GAP or NOT_ADDRESSED (not MET).
 `;
 
 export async function POST(request: NextRequest) {
@@ -700,7 +739,7 @@ export async function POST(request: NextRequest) {
 
         console.log(`[Analysis] Using ${keyName} for AI analysis (attempt ${attempt + 1}/${maxRetries})`);
         console.log(`[OpenRouter] Sending request to model: ${currentModel}`);
-        console.log(`[OpenRouter] Request params: temperature=0.3, maxTokens=4000, content_length=${content.length}`);
+        console.log(`[OpenRouter] Request params: temperature=0.3, maxTokens=6000, content_length=${content.length}`);
 
         const completion = await openrouter.chat.send({
           chatGenerationParams: {
@@ -716,7 +755,7 @@ export async function POST(request: NextRequest) {
               }
             ],
             temperature: 0.3,
-            maxTokens: 4000,
+            maxTokens: 6000,
             stream: false,
           },
         }).catch((apiError: any) => {
