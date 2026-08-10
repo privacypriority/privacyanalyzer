@@ -180,7 +180,7 @@ DUAL SCORING METHODOLOGY:
      * Consent Manager obligations (Rule 4, First Schedule) if applicable
      * Significant Data Fiduciary requirements (Rule 13) if applicable
      * Cross-border transfers (Sec. 16, Rule 15)
-     * Grievance redressal (Sec. 32)
+     * Grievance redressal (Sec. 13 right; Sec. 8(10) fiduciary obligation)
      * DPO appointment where required (Rule 13)
 
 CATEGORY SCORING: Rate each category 1-10 (10 = exemplary privacy protection, 1 = significant privacy risk)
@@ -193,7 +193,7 @@ Evaluate against DPDP Act 2023 Sec. 5 and DPDP Rules 2025 privacy-by-design prin
 - Sensitive personal data handling: Special protections per Sec. 9 DPDP Act
 - Children's data: DPDP Act Sec. 9 compliance with Rule 12 (Fourth Schedule exemptions for education/health services requiring verifiable parental consent)
 - Notice and consent: Clear, informed, free, specific and unambiguous consent mechanisms (Sec. 6, Rule 3)
-- Retention periods: Compliance with Rule 8 (Third Schedule) - Class A (3 years), Class B (10 years), Class C (indefinite with justification)
+- Retention periods: Compliance with Rule 8 - erase when purpose served or consent withdrawn; large e-commerce (2 cr+ users), online gaming (50 lakh+) and social-media (2 cr+) fiduciaries must erase 3 years after last user interaction (Third Schedule); 1-year minimum log retention
 - Data minimization enforcement: Automatic deletion mechanisms post-purpose completion (Rule 8)
 
 **THIRD-PARTY DATA SHARING & TRANSFERS (Weight: 25%)**
@@ -213,8 +213,8 @@ Evaluate DPDP Act Chapter IV and Rule 14 rights implementation for Data Principa
 - Right to access (Sec. 11, Rule 14): Summary and comprehensive data access mechanisms within reasonable timeframes
 - Right to correction (Sec. 12, Rule 14): Error rectification and data updation processes
 - Right to erasure (Sec. 12, Rule 14): Data deletion implementation and statutory exceptions
-- Right to grievance redressal (Sec. 32): Grievance Officer designation, contact details, and complaint handling
-- Right to nominate (Sec. 13, Rule 14): Nomination facility for deceased users' data management
+- Right to grievance redressal (Sec. 13): Grievance Officer designation, contact details, and complaint handling
+- Right to nominate (Sec. 14, Rule 14): Nomination facility to exercise rights on death or incapacity
 - Withdrawal of consent (Sec. 7, Rule 14): Easy, accessible, and prompt withdrawal mechanisms
 - Response timeframes: Reasonable time compliance as required by DPDP Act and Rules
 - Consent Manager facilitation: If using Consent Managers, seamless rights exercise through platform (Rule 4)
@@ -235,7 +235,7 @@ Technical and organizational measures assessment per DPDP Act Sec. 8 and Rule 6:
 **REGULATORY COMPLIANCE & LEGAL FRAMEWORK (Weight: 7%)**
 DPDP Act 2023 and Rules 2025 compliance evaluation for Indian users:
 - Data Fiduciary registration and Data Protection Officer (DPO) designation where required
-- Grievance Officer appointment and contact information (Sec. 32)
+- Grievance Officer appointment and contact information (Sec. 8(10))
 - Data Protection Board registration requirements (Sec. 25, Rules 16-22) where applicable
 - Significant Data Fiduciary obligations: DPO appointment, DPIA, periodic audits, logging (Rule 13)
 - Consent Manager obligations: If applicable, registration, technical standards, withdrawal mechanisms (Rule 4, First Schedule)
